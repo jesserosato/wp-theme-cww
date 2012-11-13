@@ -1,0 +1,78 @@
+input[type="text"].error {
+	border: 1px solid red;
+	color: red;
+}
+
+input[type="text"].error:focus {
+	border: 1px solid red;
+}
+
+label.error {
+	color: red;
+}
+
+#menu-posts-cww_donate_form .wp-menu-image {
+	background: url(../images/df-post-type-icon.png) no-repeat 6px -18px !important;
+}
+
+#menu-posts-cww_event .wp-menu-image {
+	background: url(../images/event-post-type-icon.png) no-repeat 6px -18px !important;
+}
+
+#menu-posts-cww_associate .wp-menu-image {
+	background: url(../images/associate-post-type-icon.png) no-repeat 6px -18px !important;
+}
+        
+#menu-posts-cww_donate_form:hover .wp-menu-image,
+#menu-posts-cww_donate_form.wp-has-current-submenu .wp-menu-image,
+#menu-posts-cww_event:hover .wp-menu-image,
+#menu-posts-cww_event.wp-has-current-submenu .wp-menu-image,
+#menu-posts-cww_associate:hover .wp-menu-image,
+#menu-posts-cww_associate.wp-has-current-submenu .wp-menu-image {
+	background-position: 6px 6px !important;
+}
+
+#icon-edit.icon32-posts-cww_donate_form {
+	background: url(../images/df-post-type-icon-32x32.png) no-repeat;
+}
+
+#icon-edit.icon32-posts-cww_event {
+	background: url(../images/event-post-type-icon-32x32.png) no-repeat;
+}
+
+#icon-edit.icon32-posts-cww_associate {
+	background: url(../images/associate-post-type-icon-32x32.png) no-repeat;
+}
+
+input.hours,
+input.minutes {
+	width: 40px;
+	text-align: right;
+}
+
+p.description {
+	padding: 4px 8px;
+}
+
+.meta-box-group {
+	border: 1px solid #DFDFDF;
+	padding: 0 8px;
+	padding-bottom: 4px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+}
+
+.meta-box-group h3 {
+	-webkit-border-radius: 2px 2px 0 0;
+	-moz-border-radius: 2px 2px 0 0;
+	border-radius: 2px 2px 0 0;
+	margin-left: -8px !important;
+	margin-right: -8px !important;
+	padding-left: 8px !important;
+	padding-right: 8px !important;
+}
+
+.meta-box-group p.description {
+	padding: 8px 0;
+}

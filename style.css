@@ -1,0 +1,221 @@
+/**
+ * Theme Name:     Courage Worldwide
+ * Description:    Child theme for the Striking theme 
+ * Author:         Jesse Rosato
+ * Template:       striking
+ * Version:        0.1.0
+ */
+@import url('../striking/style.css');
+
+#sidebar .button.donate, #sidebar .facebook, #sidebar .subscribe {
+  float: none;
+  display: block;
+  margin-bottom: 8px;
+}
+
+#sidebar .button.donate {
+	width: 187px;
+	padding: 0;
+	 margin: 0 0 16px 12px;
+	text-align: center;
+}
+
+#sidebar .button.donate span {
+	padding: 16px 0;
+}
+
+blockquote.sidebar.rescue, blockquote.sidebar.restore {
+  background: none;
+  font-weight: 300;
+  line-height: 150%;
+  padding: none;
+  margin: none;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+blockquote.sidebar.rescue {
+  margin-left: -40px;
+}
+
+#sidebar blockquote.sidebar.rescue a,  #sidebar blockquote.sidebar.restore a {
+  font-family: Arial, Helvetica, sans;
+  color: rgb(166, 207, 81);
+}
+
+blockquote.sidebar.restore a .line2, 
+blockquote.sidebar.restore a .line3, 
+blockquote.sidebar.restore a .line5,
+blockquote.sidebar.restore a .byline {
+  color: rgb(51,51, 51);
+}
+
+blockquote.sidebar.restore a .part2 {
+  display: block;
+  margin-top: 16px;
+  margin-left: -40px;
+}
+
+blockquote.sidebar.restore a .line7 {
+  display: block;
+  width: 100%;
+  align: justify;
+  font-size: 150%;
+}
+
+blockquote.sidebar.restore a .byline {
+  display: block;
+  text-align: right;
+  font-size: 75%
+}
+
+blockquote.sidebar.rescue a .line2 {
+  font-weight: bold;
+  font-size: 150%;
+}
+
+blockquote.sidebar.rescue a .line1, blockquote.sidebar.rescue a .line3 {
+  letter-spacing: -1px;
+  color: rgb(51,51,51);
+}
+
+blockquote.sidebar.rescue a .byline {
+  color: rgb(51,51,51);
+  font-size: 50%;
+}
+
+article img.wp-image-10269 {
+  padding-bottom: 24px;
+}
+
+/* For store buttons in 'rescue and restoration' posts */
+
+#store-link-1 {
+  display: block;
+  float: right;
+  padding: 12px;
+}
+
+#store-link-2, #store-link-3
+{
+  display: block;
+  width: 350px;
+  padding: 12px;
+  margin: 0 auto 8px auto;
+}
+
+#post-10234 .entry_title {
+  display: none;
+}
+
+#mc_signup_form .mc_var_label {
+	width: 200px;
+}
+
+form.donate label {
+	display: inline-block;
+	min-width: 150px;
+	margin-right: 8px;
+	vertical-align: top;
+}
+
+form.donate label.radio.option, form.donate label[for="df_startdate"] {
+	min-width: 0;
+}
+
+form.donate input, form.donate textarea, form.donate select {
+	vertical-align: top;
+}
+
+#type-wrap, .amount-wrap, #date-wrap, #payment-wrap, #donor-wrap {
+	padding-bottom: 8px;
+	margin-bottom: 8px;
+	border-bottom: 1px solid #EEEEEE;
+}
+
+form div.message.error {
+	margin: 8px 0;
+	padding: 8px;
+	border-radius: 4px;
+}
+
+form.donate div.info {
+	background: none;
+	border: none;
+	padding: 8px 0;
+	margin: 0;
+}
+
+form.donate input.cancel, form.donate input.submit {
+	padding: 8px 16px;
+}
+
+form.donate .input-wrap {
+	padding: 2px 0;
+}
+
+form.donate #cc-logos {
+	padding-bottom: 8px;
+}
+
+.button.disabled {
+	-moz-box-shadow: none !important;
+	-webkit-box-shadow: none !important;
+	box-shadow: none !important;
+	color: #CCCCCC;
+	background-color: #EEEEEE;
+}
+
+.button.disabled:hover,
+.button.disabled:active {
+	cursor: default;
+	-moz-box-shadow: none !important;
+	-webkit-box-shadow: none !important;
+	box-shadow: none !important;
+	color: #CCCCCC;
+	background: none !important;
+	filter: none !important;
+	-ms-filter: none !important;
+	background-color: #EEEEEE !important;
+}
+
+.cww-event {
+	background-color: #EEEEEE;
+	border: 1px solid #CCCCCC;
+	border-radius: 4px;
+	padding: 0 16px 16px 16px;
+	margin-bottom: 32px;
+}
+
+.cww-event-description {
+}
+
+.cww-event-details {
+	clear: both;
+	padding-top: 16px;
+}
+
+.cww-event-title {
+	padding-top: 16px;
+}
+
+.cww-event-thumbnail {
+	float: right;
+	padding: 0 0 16px 16px;
+}
+
+.cww-associate-thumbnail {
+	float: left;
+	padding: 0 16px 16px 0;
+}
+
+.ways-you-can-help h4 {
+	vertical-align: middle;
+	clear: both;
+}
+
+.ways-you-can-help img {
+	float: left;
+	vertical-align: middle;
+	padding: 0 16px 16px 0;
+}
