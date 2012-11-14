@@ -97,10 +97,6 @@
   </div><!-- end #amount-date-wrap !-->
   <div id="payment-wrap">
    <h3>Payment Information</h3>
-   <p>
-    If you would like to pay by CHECK, please make checks out to: Courage To Be You, Inc., and mail to: 3031 Stanford Ranch Rd. Roseville, CA 95765 (please note on check, if applicable, "monthly partner").
-   </p>
-   <p><span class="required">*</span>Required fields</p>
    <div id="cc-logos">
     <img title="Visa" src="/wp-content/themes/cww/images/V.gif" alt="Visa" width="43" height="26" />
     <img title="MasterCard" src="/wp-content/themes/cww/images/MC.gif" alt="MasterCard" width="41" height="26" />
