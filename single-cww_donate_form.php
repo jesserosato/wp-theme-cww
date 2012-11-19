@@ -1,11 +1,9 @@
 <?php
-
+// Check for successfuly submitted form or query string
 require_once('library/post_types/donate_form/df_query_process.php');
-if (!isset($df_content)) {
+// If we're not dealing with a successfully submitted form, load the processor
+if( empty($df_content) )
 	require_once('library/post_types/donate_form/df_process.php');
-	require_once('library/post_types/donate_form/text/countries.inc');
-	require_once('library/post_types/donate_form/text/error.inc');
-}
 
 $layout = get_post_meta($post->ID, '_layout', true);
 if (empty($layout) || $layout == 'default'){

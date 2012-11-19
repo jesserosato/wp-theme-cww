@@ -4,6 +4,9 @@
  *
  * BE VERY CAREFUL WHEN EDITING THIS FILE!!
  */
+require_once('library/post_types/donate_form/text/countries.inc');
+require_once('library/post_types/donate_form/text/error.inc');
+ 
 $df_countries_options = '';
 // If the user hasn't picked a country, default to U.S., otherwise, use the user's choice.
 $df_selected_country = empty($df_clean['country']) ? __('United States') : $df_clean['country'];
