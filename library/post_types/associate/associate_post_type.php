@@ -4,11 +4,11 @@
 /*
 /* By Jesse Rosato, 2012 - jesse.rosato@gmail.com
 /************************************************************************************/
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/utilities/CwwPostTypeEngine.class.php');
+require_once(ABSPATH . '/wp-content/themes/cww/library/utilities/CwwPostTypeEngine.class.php');
 require_once('associate_meta_boxes.php');
 
 
-$cww_associate_desc = 'The associate post type provides two shortcodes: <strong>[associate associateid={associate post id}]</strong> and <strong>[associates]</strong> (the curly brackets and their contents should be replaced with the appropriate information).  To display a single associate in "excerpt" view, use <strong>[associate associateid={associate post id} excerpt=true]</strong>.  Use <strong>[associates]</strong> to display multiple associates as follows, (all of the parameters are optional): <strong>[associates relationship={associate relationship slug} category={category slug} order={ASC or DESC} number={number of associates to display}]</strong>.  For parameter "order", "ASC" (the default) displays the oldest posts first and "DESC" displays the newest posts first.  For parameter "number" (default = 5), use "-1" to display all posts within the relationship and category of your choosing.';
+$cww_associate_desc = 'The associate post type provides two shortcodes (the curly brackets and their contents in the examples that follow should be replaced with the appropriate information).  To display a single associate in "excerpt" view, use: <br /><br /><strong style="display:block; text-align: center;">[associate associateid={associate post id} excerpt={true or false}]</strong><br /> Note: the associate ID is required for the single associate shortcode.<br /> Display multiple associates as follows (all of the parameters are optional):<br /><br /><strong style="display:block; text-align: center;">[associates relationship={relationship slug} category={category slug} order={ASC or DESC} number={# to display}]</strong><br />.  For parameter "order", "ASC" (the default) displays the oldest posts first and "DESC" displays the newest posts first.  For parameter "number" (default = 5), use "-1" to display all posts within the relationship and category of your choosing.';
 $cww_associate_post_type = array(
 	'handle'	=> 'cww_associate',
 	'args'		=>array(
@@ -82,49 +82,31 @@ function cww_associate_register_taxonomy( ) {
 	));
 }
 
+/************************************************************************************ 
+/* Display associate post type HTML
+/*
+/* @param int $associate_id
+/* @param str $type
+/************************************************************************************/
 function cww_associate_content( $associate_id = false, $type = 'single' ) {
 	echo cww_associate_get_content($associate_id, $type);
 }
 
-function cww_associate_get_content( $associate_id = false, $type = 'single' ) {
-	$post = $associate_id ? get_post( $associate_id ) : $GLOBALS['post'];
-	if ( $type == 'single' || $type == 'multi-full' ) {
-		$content = apply_filters('the_content', $post->post_content);
-	} else {
-		$content  = apply_filters('the_excerpt', $post->post_excerpt);
-		$content .= ' <a href="' . get_permalink($post_id) . '">Learn more...</a>';
-		if ( empty( $content ) )
-			$content = apply_filters('the_content', $post->post_content);
-	}
-		
-	$first		= get_post_meta($post->ID, 'cww_associate_first_name', true);
-	$last		= get_post_meta($post->ID, 'cww_associate_last_name', true);
-	$org		= get_post_meta($post->ID, 'cww_associate_organization', true);
-	$pos		= get_post_meta($post->ID, 'cww_associate_position', true);
-	if ( has_post_thumbnail( $post->ID ) ) {
-		$images = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'single-post-thumbnail' );
-		$image = empty($images[0]) ? false : $images[0];
-	} else {
-		$image = false;
-	}
-	$result = '<div class="cww-associate">';
-	$result .= '<div class="cww-associate-title">';
-	$result .= '<h3><a href="' . get_permalink($post->ID) . '">' . $first . ' ' . $last . '</a></h3>';
-	$result .= '</div>';
-	$result .= '<div class="cww-associate-details">';
-	if ( $image )
-		$result .= '<img class="cww-associate-thumbnail thumbnail" src="' . $image . '" />';
-	if ( $type == 'single' )
-		$result .= "<p>$first $last</p>";
-	if ( $org )
-		$result .= "<p>$org</p>";
-	if ( $pos )
-		$result .= "<p>$pos</p>";
-	$result .= '</div>';
-	$result .= '<div class="cww-associate-description">';
-	$result .= $content;
-	$result .= '</div></div>';
+/************************************************************************************ 
+/* Return associate post type HTML
+/*
+/* @param int $associate_id
+/* @param str $type
+/************************************************************************************/
+function cww_associate_get_content($associate_id = fale, $type = 'single') {
+	global $post;
+	$old_post = $post;
+	$post = $associate_id ? get_post( $associate_id ) : $post;
+	global $cww_associate_type;
+	$cww_associate_type = $type;
 	
+	$result = '' . get_template_part('template', 'associate');
+	$post = $old_post;
 	return $result;
 }
 
@@ -169,9 +151,12 @@ function cww_associate_save_post( $post_id ) {
 /************************************************************************************/
 add_shortcode( 'associate', 'cww_associate_single_shortcode_callback' );
 function cww_associate_single_shortcode_callback( $atts, $content = null ) {
-	$associate_id = empty($atts['associateid']) ? false : $atts['associateid'];
-	$type = empty($atts['excerpt']) ? false : 'multi';
-	return cww_associate_get_content($associate_id, $type);
+	global $post;
+	// If the post is 
+	if ( empty( $atts['associateid'] ) || $post->post_type == 'cww_associate' )
+		return '<p class="error">Oops!  The associate shortcode requires an associate ID, and/or cannot be used within an associate post.</p>';
+	$type = empty($atts['excerpt']) || strtolower($atts['excerpt']) == 'false' ? false : 'multi';
+	return cww_associate_get_content( $atts['associateid'], $type );
 }
 
 /************************************************************************************ 
@@ -184,6 +169,9 @@ function cww_associate_single_shortcode_callback( $atts, $content = null ) {
 /************************************************************************************/
 add_shortcode( 'associates', 'cww_associate_multiple_shortcode_callback' );
 function cww_associate_multiple_shortcode_callback( $atts, $content = null ) {
+	global $post;
+	if ( $post->post_type == 'cww_associate' )
+		return '<p class="error">Oops!  The associates shortcode cannot be used within an associate post.</p>';
 	$defaults_array = array(
 		'relationship' => false,
 		'category' => false,

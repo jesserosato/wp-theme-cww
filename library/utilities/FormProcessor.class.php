@@ -13,10 +13,14 @@ class FormProcessor {
 	/************************************************************************************ 
 	/* Default constructor
 	/************************************************************************************/
-	public function __construct() {
-		if( empty( $_POST ) )
+	public function __construct( $method = null ) {
+		$method = !empty( $method ) && strtoupper( $method ) == 'GET' ? 'GET' : 'POST';
+		if( $method == 'POST' && empty( $_POST ) )
 			throw new Exception('FormProcessor expects that form has been submitted via POST.');
-		$this->clean				= $this->sanitize_data($_POST);
+		if( $method == 'GET' && empty( $_GET ) )
+			throw new Exception('FormProcessor expects that form has been submitted via GET.');
+		$raw = $method == 'POST' ? $_POST : $_GET;
+		$this->clean				= $this->sanitize_data($raw);
 		$this->errors				= array();
 		$this->error_msgs			= array();
 	} // end __construct()
@@ -76,9 +80,9 @@ class FormProcessor {
 			
 		$result = array();
 		foreach( $data as $key=>$val ) {
-			$result = trim($val);
+			$val = trim($val);
 			$flag = preg_match('/email/i', $key) ? FILTER_SANITIZE_EMAIL : FILTER_SANITIZE_STRING;
-			$result[$key] = trim(filter_var($val, $flag));
+			$result[$key] = filter_var($val, $flag);
 		}
 		return $result;
 	} // end sanitize_data()

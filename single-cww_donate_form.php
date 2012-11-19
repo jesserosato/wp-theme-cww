@@ -1,14 +1,6 @@
 <?php
-if (isset($_GET['df'])) {
-	$df_passed_data = get_transient($_GET['df']);
-	// Check for expired transient.
-	if ($df_passed_data) {
-		$df_passed_data = unserialize($df_passed_data);
-		$post = get_post($df_passed_data['conf_post_id']);
-		$df_content = $df_passed_data['conf_content'];
-	}
-}
 
+require_once('library/post_types/donate_form/df_query_process.php');
 if (!isset($df_content)) {
 	require_once('library/post_types/donate_form/df_process.php');
 	require_once('library/post_types/donate_form/text/countries.inc');
@@ -34,7 +26,7 @@ if (empty($layout) || $layout == 'default'){
 				echo $df_content;
 			} else {
 				the_content();
-				require_once('library/post_types/donate_form/df_form.php');
+				get_template_part('template', 'donate_form');
 			}
 			?>
 			 <div class="clearboth"></div>

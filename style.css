@@ -219,3 +219,9 @@ form.donate #cc-logos {
 	vertical-align: middle;
 	padding: 0 16px 16px 0;
 }
+
+.postid-112 header,
+.postid-112 footer > div.inner,
+.postid-112 #footer_shadow {
+	display: none;
+}

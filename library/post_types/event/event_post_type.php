@@ -4,7 +4,7 @@
 /*
 /* By Jesse Rosato, 2012 - jesse.rosato@gmail.com
 /************************************************************************************/
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/utilities/CwwPostTypeEngine.class.php');
+require_once(ABSPATH . '/wp-content/themes/cww/library/utilities/CwwPostTypeEngine.class.php');
 require_once('event_meta_boxes.php');
 
 $cww_event_desc = __('You can use the data entered below via shortcodes. Click the "more info" link on a setting to see an example of its associated shortcode.', 'cww') . '<br />' . __('There are two shortcodes for displaying entire events:', 'cww') . '<br /><strong>Single event shortcode</strong>: [event eventid="1234"]<br /><strong>Multiple event shortcode</strong>: [events category="category_slug"]';
@@ -144,62 +144,13 @@ function cww_event_content( $event_id = false, $type = 'single' ) {
 /* @return string
 /************************************************************************************/
 function cww_event_get_content( $event_id = false, $type = 'single' ) {
-	$post		= $event_id ? get_post($event_id) : $GLOBALS['post'];
-	$post_id	= $post->ID;
-	
-	$event_is_over = cww_event_is_over( $post_id );
-	$after_post_id = get_post_meta($post_id, 'cww_event_after_post_id', true);
-	if ( $after_post_id &&  $event_is_over ) {
-		$post = get_post($after_post_id);
-	}
-	
-	if ($type == 'single' || $type == 'multi-full') {
-		$content	= apply_filters('the_content', $post->post_content);
-	} else {
-		$content	= apply_filters('the_excerpt', $post->post_excerpt);
-		if ( empty( $content ) )
-			$content = apply_filters('the_content', $post->post_content);
-	}
-	
-	$location	= do_shortcode('[eventlocation eventid="' . $post_id . '"]');
-	$start_date = do_shortcode('[eventstartdate eventid="' . $post_id . '"]');
-	$start_time = do_shortcode('[eventstarttime eventid="' . $post_id . '"]');
-	$end_date	= do_shortcode('[eventenddate eventid="' . $post_id . '"]');
-	$end_time	= do_shortcode('[eventendtime eventid="' . $post_id . '"]');
-	$details	= do_shortcode('[eventinfo eventid="' . $post_id . '"]');
-	$reg_btn	= do_shortcode('[eventregbtn eventid="' . $post_id . '"]Register[/eventregbtn]');
-	$result = '<div class="cww-event ' . $type . '">';
-	
-	$result .= '<div class="cww-event-title">';
-	$result .= '<h3>';
-	$result .= '<a href="' .  get_permalink($post_id) . '">' . $post->post_title . '</a></h3>';
-	$result .= '</div>';
-	 
-	$result .= '<div class="cww-event-description">';
-	$result .= $content;
-	$result .= '</div>';
-	 
-	$result .= '<div class="cww-event-details">';
-	if ( has_post_thumbnail( $post_id ) ) {
-		$image = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), 'single-post-thumbnail' );
-		$result .= '<img class="cww-event-thumbnail" src="' . $image[0] . '" />';
-	}
-	if ( !( $event_is_over && $after_post_id ) ) {
-		$result .= '<p><strong>Location</strong><br />' . $location . '</p>';
-		$result .= '<p><strong>Starts</strong><br />' . $start_date . ' at ' . $start_time . '</p>';
-		$result .= '<p><strong>Ends</strong><br />' . $end_date . ' at ' . $end_time . '</p>';
-		if ( $details )
-			$result .= '<p><strong>Details</strong><br />' . $details . '</p>';
-		if ( $reg_btn )
-			$result .= $reg_btn;
-		if ( $type == 'multi' ) {
-			if ( $reg_btn )
-				$result .= '&nbsp; &nbsp;';
-			$result .= '<a href="' . get_permalink($post_id) . '">Learn more...</a>';
-		}
-	}
-	$result .= '</div>';
-	$result .= '</div>';
+	global $cww_event_type;
+	global $post;
+	$cww_event_type	= $type;
+	$old_post		= $post;
+	$post			= $event_id ? get_post($event_id) : $post;
+	$result			= '' . get_template_part('template', 'event');
+	$post			= $old_post;
 	return $result;
 }
 
