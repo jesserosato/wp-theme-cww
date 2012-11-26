@@ -61,7 +61,6 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         </label>
         <input id="df_amount_monthly" value="<?php echo (!empty($df_clean['df_amount_monthly']) ? $df_clean['df_amount_monthly'] : ''); ?>" type="text" name="df_amount_monthly" size="10" />
       </div>
-      <div class="info">$25 or more per month commitment qualifies you for the Courage Partner program.</div>
     </div><!-- end #monthly-wrap !-->
     <div id="annual-wrap" class="amount-wrap" <?php echo ((empty($df_clean['df_type'])) || ($df_clean['df_type'] != 'annual') ? 'style="display: none;"' : ''); ?>>
       <?php if (!empty($df_errors['df_amount_annual'])) : ?>
@@ -75,9 +74,6 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         </label>
         <input id="df_amount_annual" value="<?php echo (!empty($df_clean['df_amount_annual']) ? $df_clean['df_amount_annual'] : ''); ?>" type="text" name="df_amount_annual" size="10" />
       </div>
-      <div class="info">
-        $300 or more per year commitment qualifies you for the Courage Partner program.
-      </div>
     </div><!-- end #annual-wrap !-->
     <div id="business-wrap" class="amount-wrap" <?php echo ((empty($df_clean['df_type'])) || ($df_clean['df_type'] != 'business') ? 'style="display: none;"' : ''); ?>>
       <?php if (!empty($df_errors['df_amount_business'])) : ?>
@@ -90,9 +86,6 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
           <span class="required">*</span>Business Partner Amount - Enter amount: $
         </label>
         <input id="df_amount_business" value="<?php echo (!empty($df_clean['df_amount_business']) ? $df_clean['df_amount_business'] : ''); ?>" type="text" name="df_amount_business" size="10" />
-        <div class="info">
-          $100 or more per month or a $1,200 annual commitment qualifies you for the Courage Business Partner program.
-        </div>
       </div><!-- end #business-amount-wrap !-->
     </div><!-- end #business-wrap !-->
     <div id="onetime-wrap" class="amount-wrap" <?php echo ((empty($df_clean['df_type'])) || ($df_clean['df_type'] != 'onetime') ? 'style="display: none;"' : ''); ?>>
@@ -108,7 +101,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         <input id="df_amount_onetime" value="<?php echo (!empty($df_clean['df_amount_onetime']) ? $df_clean['df_amount_onetime'] : ''); ?>" type="text" name="df_amount_onetime" size="10" />
       </div>
     </div><!-- end #onetime-wrap !-->
-    <div id="date-wrap" class="date-wrap" <?php echo ((empty($df_clean['df_type'])) || ($df_clean['df_type'] == 'onetime') ? 'style="display: none;"' : ''); ?>>
+    <div id="date-wrap" class="date-wrap" <?php echo (empty($df_clean['df_type']) || $df_clean['df_type'] == 'onetime' ? 'style="display: none;"' : ''); ?>>
       <?php if (!empty($df_errors['df_startdate'])) : ?>
       <div class="error message startdate">
         <?php echo $df_error_msgs['df_startdate'][$df_errors['df_startdate']]; ?>
@@ -121,52 +114,49 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
       </div><!-- end #startdate-wrap !-->
     </div><!-- end #date-wrap !-->
   </div><!-- end #amount-date-wrap !-->
-  <div id="payment-wrap">
+  <div id="payment-wrap" class="payment-wrap">
+    <?php if (!empty($df_errors['df_pay_method'])) : ?>
+    <div class="error message pay-method">
+      <?php echo $df_error_msgs['df_pay_method'][$df_errors['df_pay_method']]; ?>
+    </div>
+    <?php endif; ?>
     <h3>Payment Information</h3>
-    <div id="cc-logos">
-      <img title="Visa" src="/wp-content/themes/cww/images/V.gif" alt="Visa" width="43" height="26" />
-      <img title="MasterCard" src="/wp-content/themes/cww/images/MC.gif" alt="MasterCard" width="41" height="26" />
-      <img title="American Express" src="/wp-content/themes/cww/images/Amex.gif" alt="American Express" width="40" height="26" />
-      <img title="Discover" src="/wp-content/themes/cww/images/Disc.gif" alt="Discover" width="40" height="26" />
-    </div><!-- end #cc-logos !-->
-    <div id="card-num-wrap" class="input-wrap text">
-      <?php if (!empty($df_errors['df_card_num'])) : ?>
-      <div class="error message">
-        <?php echo $df_error_msgs['df_card_num'][$df_errors['df_card_num']]; ?>
+    <div id="pay-method-input-wrap">
+      <label for="df_pay_method" class="radio main"><span class="required">*</span>Payment Method</label><br />
+      <input name="df_pay_method" type="radio" value="check" class="radio option" <?php echo (!empty($df_clean['df_pay_method']) && $df_clean['df_pay_method'] == 'check' ? 'checked="checked"' : 'false'); ?> />
+      <label for="df_pay_method-check" class="radio option">Check </label>
+      <input name="df_pay_method" type="radio" value="cash" class="radio option" <?php echo (!empty($df_clean['df_pay_method']) && $df_clean['df_pay_method'] == 'cash' ? 'checked="checked"' : 'false'); ?> />
+      <label for="df_pay_method-cash" class="radio option">Cash </label>
+    </div>
+    <div id="check-wrap" class="pay-method-wrap check-wrap" <?php echo (empty($df_clean['df_pay_method']) || $df_clean['df_pay_method'] == 'cash' ? 'style="display: none;"' : ''); ?>>
+      <?php if ( !empty( $df_errors['df_check_bank'] ) ) : ?>
+      <div class="error message check-bank">
+        <?php echo $df_error_msgs['df_check_bank'][$df_errors['df_check_bank']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_card_num"><span class="required">*</span>Card Number:</label>
-      <input id="df_card_num" class="input_text" value="<?php echo (!empty($df_clean['df_card_num']) ? $df_clean['df_card_num'] : ''); ?>" type="text" name="df_card_num" maxlength="16" />
-      <span class="input-info">(enter number without spaces or dashes)</span>
-    </div>
-    <div id="exp-date-wrap" class="input-wrap text short">
-      <?php if (!empty($df_errors['df_exp_date'])) : ?>
-      <div class="error message">
-        <?php echo $df_error_msgs['df_exp_date'][$df_errors['df_exp_date']]; ?>
+      <label for="df_check_bank"><span class="required">Bank</span></label>
+      <input id="df_check_bank" name="df_check_bank" value="<?php echo (!empty($df_clean['df_check_bank']) ? $df_clean['df_check_bank'] : ''); ?>" type="text" />
+      <br />
+      <?php if ( !empty( $df_errors['df_check_number'] ) ) :  ?>
+      <div class="error message check-number">
+        <?php echo $df_error_msgs['df_check_number'][$df_errors['df_check_number']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_exp_date"><span class="required">*</span>Expiration Date:</label>
-      <input id="df_exp_date" class="input_text" value="<?php echo (!empty($df_clean['df_exp_date']) ? $df_clean['df_exp_date'] : ''); ?>" type="text" name="df_exp_date" size="5" maxlength="4" />
-      <span class="input-info">(mmyy)</span>
-    </div>
-    <div id="card-code-wrap" class="input-wrap text short">
-      <?php if (!empty($df_errors['df_card_code'])) : ?>
-      <div class="error message">
-        <?php echo $df_error_msgs['df_card_code'][$df_errors['df_card_code']]; ?>
+      <label for="df_check_number"><span class="required">Check Number</label>
+      <input id="df_check_number" name="df_check_number" value="<?php echo (!empty($df_clean['df_check_number']) ? $df_clean['df_check_number'] : ''); ?>" type="text" />
+    </div><!-- end #check-wrap !-->
+    <div id="cash-wrap" class="pay-method-wrap cash-wrap" <?php echo (empty($df_clean['df_pay_method']) || $df_clean['df_pay_method'] == 'check' ? 'style="display: none;"' : ''); ?>>
+      <?php if ( !empty( $df_errors['df_cash_bank'] ) ) : ?>
+      <div class="error message cash-bank">
+        <?php echo $df_error_msgs['df_cash_bank'][$df_errors['df_cash_bank']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_card_code"><span class="required">*</span>Security Code:</label>
-      <input id="df_card_code" class="input_text" value="<?php echo (!empty($df_clean['df_card_code']) ? $df_clean['df_card_code'] : ''); ?>" type="text" name="df_card_code" size="5" maxlength="4" />
-      <span class="input-info">
-        <a id="aCardCodeWhatsThis" class="modal-extern" href="https://account.authorize.net/help/Miscellaneous/Pop-up_Terms/Virtual_Terminal/Card_Code.htm" target="_blank">
-          What's this?
-        </a>
-      </span>
-    </div>
+      <label for="df_cash_bank"><span class="required">Bank</span></label>
+      <input id="df_cash_bank" name="df_cash_bank" value="<?php echo (!empty($df_clean['']) ? $df_clean['df_cash_bank'] : ''); ?>" type="text" />
+    </div><!-- end #cash-wrap !-->
   </div><!-- end #payment-wrap !-->
   <div id="donor-wrap" class="donor-wrap">
-    <h3>Your Information</h3>
-    <p><span class="required">*</span>Required fields</p>
+    <h3>Donor Information</h3>
     <div id="firstname-wrap" class="input-wrap text">
       <?php if (!empty($df_errors['df_firstname'])) : ?>
       <div class="error message">
@@ -195,7 +185,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         <?php echo $df_error_msgs['df_address'][$df_errors['df_address']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_address"><span class="required">*</span>Address:</label>
+      <label for="df_address">Address:</label>
       <input id="df_address" value="<?php echo (!empty($df_clean['df_address']) ? $df_clean['df_address'] : ''); ?>" type="text" name="df_address" size="40" />
     </div>
     <div id="city-wrap" class="input-wrap text">
@@ -204,7 +194,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         <?php echo $df_error_msgs['df_city'][$df_errors['df_city']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_city"><span class="required">*</span>City:</label>
+      <label for="df_city">City:</label>
       <input id="df_city" value="<?php echo (!empty($df_clean['df_city']) ? $df_clean['df_city'] : ''); ?>" type="text" name="df_city" />
     </div>
     <div id="state-wrap" class="input-wrap text short">
@@ -213,7 +203,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         <?php echo $df_error_msgs['df_state'][$df_errors['df_state']]; ?>
       </div>
       <?php endif; ?>
-      <label for="state"><span class="required">*</span>State/Province:</label>
+      <label for="state">State/Province:</label>
       <input id="df_state" value="<?php echo (!empty($df_clean['df_state']) ? $df_clean['df_state'] : ''); ?>" type="text" name="df_state" size="5" />
     </div>
     <div id="zip-wrap" class="input-wrap text">
@@ -222,7 +212,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         <?php echo $df_error_msgs['df_zip'][$df_errors['df_zip']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_zip"><span class="required">*</span>Zip/Postal Code:</label>
+      <label for="df_zip">Zip/Postal Code:</label>
       <input id="df_zip" value="<?php echo (!empty($df_clean['df_zip']) ? $df_clean['df_zip'] : ''); ?>" type="text" name="df_zip" size="10" />
     </div>
     <div id="country-wrap" class="input-wrap select">
@@ -231,7 +221,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         <?php echo $df_error_msgs['df_country'][$df_errors['df_country']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_country"><span class="required">*</span>Country:</label>
+      <label for="df_country">Country:</label>
       <select id="df_country" name="df_country" size="1">
         <?php echo $df_countries_options; ?>
       </select>
@@ -242,7 +232,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         <?php echo $df_error_msgs['df_phone'][$df_errors['df_phone']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_phone"><span class="required">*</span>Phone:</label>
+      <label for="df_phone">Phone:</label>
       <input id="df_phone" type="text" value="<?php echo (!empty($df_clean['df_phone']) ? $df_clean['df_phone'] : ''); ?>" name="df_phone" size="17" maxlength="16" />
     </div>
     <div id="email-wrap" class="input-wrap text">
@@ -251,7 +241,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         <?php echo $df_error_msgs['df_email'][$df_errors['df_email']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_email"><span class="required">*</span>Email:</label>
+      <label for="df_email">Email:</label>
       <input id="df_email" type="text" value="<?php echo (!empty($df_clean['df_email']) ? $df_clean['df_email'] : ''); ?>" name="df_email" size="35" />
     </div>
     <div id="notes-wrap" class="input-wrap textarea">
@@ -263,12 +253,12 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
     <?php if ($df_mc_api_token && $df_mc_list_id) : ?>
     <div id="subscribe-wrap" class="input-wrap checkbox single">
       <input id="df_subscribe" type="checkbox" name="df_subscribe" value="1" <?php echo (empty($df_clean) || (!empty($df_clean['df_subscribe']) && $df_clean['df_subscribe']) ? 'checked="checked"' : ''); ?> style="padding-right: 16px;" />
-      <label for="df_subscribe" class="single-checkbox">Get news and information about <?php echo get_bloginfo('name'); ?></label>
+      <label for="df_subscribe" class="single-checkbox">Add donor to mailing list</label>
     </div>
     <?php endif; ?>
   </div><!-- end #donor-wrap !-->
   <div id="button-wrap">
     <input id="cancel-donate" type="button" class="cancel button" name="cancel-donate" value="Cancel" /></td>
-    <input id="df_submit" type="submit" class="submit button" name="df_submit" value="Donate" /></td>
+    <input id="df_submit" type="submit" class="submit button" name="df_submit" value="Submit" /></td>
   </div><!-- end #button-wrap !-->
 </form>

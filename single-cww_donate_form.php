@@ -1,9 +1,12 @@
 <?php
 // Check for successfuly submitted form or query string
 require_once('library/post_types/donate_form/df_query_process.php');
-// If we're not dealing with a successfully submitted form, load the processor
-if( empty($df_content) )
-	require_once('library/post_types/donate_form/df_process.php');
+
+if (empty($df_content))
+	require_once('library/post_types/donate_form/df_process.php');	
+
+
+$cww_df_form_template = get_post_meta($post->ID, 'cww_df_private_form', true) ? 'donate_form-private' : 'donate_form';
 
 $layout = get_post_meta($post->ID, '_layout', true);
 if (empty($layout) || $layout == 'default'){
@@ -20,11 +23,11 @@ if (empty($layout) || $layout == 'default'){
 <?php if ( have_posts() ) while ( have_posts() ) : the_post(); ?>
 			<div class="content">
 			<?php
-			if (isset($df_content)) {
+			if (!empty($df_content)) {
 				echo $df_content;
 			} else {
 				the_content();
-				get_template_part('template', 'donate_form');
+				get_template_part('template', $cww_df_form_template);
 			}
 			?>
 			 <div class="clearboth"></div>

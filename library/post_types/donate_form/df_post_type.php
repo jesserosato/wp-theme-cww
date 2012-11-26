@@ -1,5 +1,5 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/utilities/CwwPostTypeEngine.class.php');
+require_once(ABSPATH . '/wp-content/themes/cww/library/utilities/CwwPostTypeEngine.class.php');
 require_once('df_meta_boxes.php');
 require_once('df_options.php');
 
@@ -44,6 +44,7 @@ add_action('admin_init', array(&$cww_df_post_type_engine, 'add_meta_boxes'));
 add_action( 'save_post', 'cww_df_save_post' );
 function cww_df_save_post( $post_id ) {
 	$post = get_post($post_id);
+	$meta_boxes = cww_df_meta_boxes(true, true);
 	// Make sure this is our post type.
 	if ( $post->post_type != 'cww_donate_form' )
 		return;
@@ -64,7 +65,11 @@ function cww_df_save_post( $post_id ) {
         return;
 	
 	// OK, we're authenticated: we need to find and save the data
-	$_POST['cww_df_update_hr'] = isset( $_POST['cww_df_update_hr'] ) && $_POST['cww_df_update_hr'] ? 1 : 0;
+	foreach ( $meta_boxes['cww_df_settings'] as $key => $meta_box ) {
+		if ( $meta_box['args']['type'] == 'checkbox' ) {
+			$_POST[$key] = !empty( $_POST[$key] ) ? 1 : 0;
+		}	
+	}
 	
 	foreach ( $_POST as $key => $value ) {
 		if ( preg_match( '/^cww_df_.*/', $key ) ) {

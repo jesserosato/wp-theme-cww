@@ -16,7 +16,7 @@ class CwwHighriseInterface {
 	protected $_hr; // Highrise API object
 	protected $_config; // Configuration array.
 	
-	public function __construct($config, $hr_account = FALSE, $hr_token = FALSE)
+	public function __construct($config, $hr_account = false, $hr_token = false)
 	{	
 		// Load required files
 		require_once('lib/HighriseAPI.class.php');
@@ -61,41 +61,45 @@ class CwwHighriseInterface {
 	/***************************************************************************************/
 	public function syncContact($data) {
 		// Move array into variables
-		foreach ($data as $key=>$val)
-			$$key = $val;
+		extract($data);
 		
 		// Create and populate a 'person' object.
-		$found  = TRUE;
+		$found  = true;
+		$email = empty($email) ? false : trim(strtolower($email));
 		$person = $this->loadPerson($first_name, $last_name, $email);
 		if (!$person) {
-			$found = FALSE;
+			$found = false;
 			$person = new HighrisePerson($this->_hr);
 			$person->setFirstName(trim($first_name));
 			$person->setLastName(trim($last_name));
-			$person->addEmailAddress(trim(strtolower($email)), 'Home');
 		}
 		
+		// Check whether email address is unique
+		if ( !empty( $email ) && ( !$found || $this->isNewEmailAddress( $email, $person ) ) )
+			$person->addEmailAddress($email, 'Home');
+		
 		// Check whether optional user-entered fields exist.
-		$company = isset($company) ? trim($company) : FALSE;
+		$company = !empty($company) ? trim($company) : false;
 		if ($company)
 			$person->setCompanyName($company);
 			
 		// Check whether address and phone number are unique.
-		if (!$found || $this->isNewPhoneNumber($phone, $person))
+		if ( !empty( $phone ) && ( !$found || $this->isNewPhoneNumber( $phone, $person ) ) )
 			$person->addPhoneNumber($phone, 'Home');
-		if (!$found || $this->isNewAddress($address, $zip, $person))
+		
+		$has_address = !empty($address) && !empty($city) && !empty($state) && !empty($zip) && !empty($country);
+		if ( $has_address && ( !$found || $this->isNewAddress( $address, $zip, $person ) ) )
 			$person->addAddress($address, $city, $state, $zip, $country, 'Home');
 		
 		// Save person object (must be done before adding notes to person).
 		$person->save();
 		
 		// Add user comments as a note.
-		$notes = isset($notes) ? trim($notes) : FALSE;
+		$notes = !empty($notes) ? trim($notes) : false;
 		if ($notes) {
 			$note = "Note from " . $person->getFirstName() . " " . $person->getLastName() . ": " . $notes;
 			$this->addNote($note, $person);
 		}
-		
 		return $person;
 	} // end syncContact
 	
@@ -129,31 +133,30 @@ class CwwHighriseInterface {
 	 * 		- task
 	/***************************************************************************************/
 	public function addTransaction($transaction, HighrisePerson $person) {
-		
 		// Move transaction data into variables
-		foreach($transaction as $key => $val)
-			$$key = $val;
+		extract($transaction);
 		// To store results
 		$result = array();
 			
 		// Create deal, task and note for each product.
 		$i = 0;
-		foreach ($products as $product) {
+		foreach ( $products as $product ) {
 			// - Deal
-			$url_parts = parse_url($source);
-			unset($url_parts['query']);
-			$url = implode('', $url_parts);
-			$product_name = isset($product['name']) ? $product['name'] : false;
-			$product_quantity	= isset($product['quantity']) ? 'Qty: ' . $product['quantity'] : false;
+			// Not all transactions actually have an associated product
+			$product_name = empty($product['name']) ? false : $product['name'];
+			$product_quantity	= empty($product['quantity']) ? false : 'QTY: ' . $product['quantity'];
+			// Strip query from URL
+			$source = preg_replace('/[?].*/', '', $source);
 			$deal_name_parts = array(
 				'Donation form',
-				preg_replace('/[?].*/', '', $source), 
+				$source, 
 				$pay_method, 
 				$account, 
 				$id,
 				$product_name,
 				$product_quantity,
 			);
+			// Remove empty parts from deal name
 			foreach ($deal_name_parts as $key => $val) {
 				if (!$val)
 					unset($deal_name_parts[$key]);
@@ -163,8 +166,8 @@ class CwwHighriseInterface {
 			$deal = $result[$i]['deal'];
 			
 			// - Tags
-			if (!empty($tags)) {
-				foreach ($tags as $tag) {
+			if ( !empty( $tags ) && is_array( $tags ) ) {
+				foreach ( $tags as $tag ) {
 					$this->addTag($tag, $person->id, 'Person');
 					$this->addTag($tag, $deal->id, 'Deal');
 				}
@@ -173,10 +176,10 @@ class CwwHighriseInterface {
 			// - Note 
 			$name 				= $person->getFirstName() . ' ' . $person->getLastName();
 			$product_type 		= ucfirst($product['type']) . ' Donation';
-			$product_category 	= isset($product['category']) ? $product['category'] : 'General donation';
+			$product_category 	= empty($product['category']) ? 'General donation' : $product['category'];
 			$datetime			= date('n-d-Y H:i');
-			if (empty($product['start_date'])) {
-				if ($product['type'] == 'onetime')
+			if ( empty( $product['start_date'] ) ) {
+				if ( $product['type'] == 'onetime' )
 					$start_date = false;
 				else
 					$start_date = date('n-d-Y');
@@ -196,8 +199,8 @@ class CwwHighriseInterface {
 				"Deal" => $deal_link,
 			);
 			$note_body = array("Donation form");
-			foreach ($note_body_parts as $key => $val) {
-				if ($val)
+			foreach ( $note_body_parts as $key => $val ) {
+				if ( $val )
 					$note_body[] = "$key: $val";
 			}
 			$result[$i]['note'] = $this->addNote(implode(' | ', $note_body), $person);
@@ -206,24 +209,23 @@ class CwwHighriseInterface {
 			$task_delay	= $this->_config['task_delay'];
 			if ($product['type'] == 'monthly' || $product['type'] == 'annual') {
 				// Set reminder task about deal expiration.
-				$start_date = isset($product['start_date']) && $product['start_date'] ? $product['start_date'] : date('Y-m-d');
-				if ($product['type'] == 'monthly')
+				$start_date = empty($product['start_date']) ? date('Y-m-d') : $product['start_date'];
+				if ( $product['type'] == 'monthly' )
 					$exp_timestamp = strtotime($start_date . "+" . $product['duration'] . " months");
-				if ($product['type'] == 'annual')
+				if ( $product['type'] == 'annual' )
 					$exp_timestamp = strtotime($start_date . "+" . $product['duration'] . " years");	
 				$exp_date = date('n/d/Y', $exp_timestamp);
-
 				$due_date = date('Y-m-d', strtotime($start_date . "+" . $task_delay)) . 'T10:00:00-08:00';
 				$task_body = 'Follow up on recurring donation, made ';
 				$task_body .= $task_delay;
 				$task_body .= " ago.  Donation expires on $exp_date.";
 				$result[$i]['tasks'][] = $this->addTask($task_body, $due_date, $result[$i]['deal']);
+				
 				// Set reminder task if card expires before deal does.
-				// Use the 1st, because most cards expire on last day of expiration month.
-				if (!empty($transaction['card_exp'])) {
+				// - Use the 1st, because most cards expire on last day of expiration month.
+				if ( !empty( $transaction['card_exp'] ) ) {
 					$card_exp  = '20' . substr($transaction['card_exp'], 2, 2) . '/';
 					$card_exp .= substr($transaction['card_exp'], 0, 2) . '/01';
-					
 					$card_exp_timestamp = strtotime($card_exp);
 					if ($card_exp_timestamp < $exp_timestamp) {
 						$task_body = 'The credit card used for recurring donation expires this month.';
@@ -244,20 +246,46 @@ class CwwHighriseInterface {
 	} // end addTransaction
 	
 	/****************************************************************************************
-	 * Search by email.  If people with email are found, check first name and last name.
-	 * If all three match, return Highrise Person Object, else return false.
+	 * Search by email if possible, by full name otherwise.  If people are found, check first 
+	 * name and last name.  If match, return Highrise Person Object, else return false.
 	/****************************************************************************************/
 	public function loadPerson($first_name, $last_name, $email) {
+		if ( $email ) {
+			$email = trim(strtolower($email));
+			$people = $this->_hr->findPeopleByEmail($email);
+		} 
+		
+		if ( !$email || empty( $people ) )
+			$people = $this->_hr->findPeopleBySearchTerm($first_name . ' ' . $last_name);
+		
+		if ( empty( $people ) ) return false;
+		
 		$first_name = trim(strtolower($first_name));
 		$last_name = trim(strtolower($last_name));
-		$email = trim(strtolower($email));
-		$people = $this->_hr->findPeopleByEmail($email);
-		if (!count($people)) return FALSE;
-		foreach ($people as $person) {
-			if ((strtolower($person->getFirstName()) == $first_name) && (strtolower($person->getLastName()) == $last_name))
+		foreach ( $people as $person ) {
+			$check_first = strtolower($person->getFirstName());
+			$check_last = strtolower($person->getLastName());
+			if ( $check_first == $first_name && $check_last == $last_name )
 				return $person;
 		}
-		return FALSE;
+		return false;
+	}
+	
+	/****************************************************************************************
+	 * Check street and zip against existing addresses
+	 * Returns true if new address, false if existing.
+	/****************************************************************************************/
+	public function isNewEmailAddress($email, HighrisePerson $person) {
+		$street		= strtolower($email);
+		$addresses	= $person->getEmailAddresses();
+		if ( empty( $addresses ) )
+			return true;
+		foreach( $addresses as $address ) {
+			$address = strtolower($address->getAddress());
+			if ( $address == $email )
+				return false;
+		}
+		return true;
 	}
 	
 	/****************************************************************************************
@@ -265,19 +293,18 @@ class CwwHighriseInterface {
 	 * Returns true if new address, false if existing.
 	/****************************************************************************************/
 	public function isNewAddress($street, $zip, HighrisePerson $person) {
-		$is_new		= TRUE;
 		$street		= preg_replace('/[^a-zA-Z0-9 ]/', '', strtolower($street));
 		$zip		= preg_replace('/[^0-9]/', '', strtolower($zip));
 		$addresses	= $person->getAddresses();
-		if (!count($addresses))
-			return $is_new;
-		foreach($addresses as $address) {
+		if ( !count($addresses) )
+			return $true;
+		foreach( $addresses as $address ) {
 			$cur_street = preg_replace('/[^a-zA-Z0-9 ]/', '', strtolower($address->getStreet()));
 			$cur_zip	= preg_replace('/[^0-9]/', '', strtolower($address->getZip()));
-			if (($cur_street == $street) && ($cur_zip == $zip))
-				$is_new = FALSE;
+			if ( $cur_street == $street && $cur_zip == $zip )
+				return false;
 		}
-		return $is_new;
+		return true;
 	}
 	
 	/****************************************************************************************
@@ -285,16 +312,15 @@ class CwwHighriseInterface {
 	 * Returns true if new number, false if existing.
 	/****************************************************************************************/
 	public function isNewPhoneNumber($phone_number, HighrisePerson $person) {
-		$is_new = TRUE;
 		$phones = $person->getPhoneNumbers();
-		if (!count($phones))
-			return $is_new;
-		foreach ($phones as $phone) {
+		if ( !count( $phones ) )
+			return true;
+		foreach ( $phones as $phone ) {
 			$cur_num = preg_replace('/[^0-9]/', '', $phone->getNumber());
-			if ($cur_num == $phone_number)
-				$is_new = FALSE;
+			if ( $cur_num == $phone_number )
+				return false;
 		}
-		return $is_new;
+		return true;
 	}
 	
 	/****************************************************************************************
@@ -331,7 +357,7 @@ class CwwHighriseInterface {
 	public function addDeal($deal_name, $product, HighrisePerson $person) {
 		$deal = new HighriseDeal($this->_hr);
 		$deal->setName($deal_name);
-		$category = isset($product['category']) ? $product['category'] : FALSE;
+		$category = isset($product['category']) ? $product['category'] : false;
 		$deal->setCategoryId($this->_getDealCategoryId($category, $product['type']));
 		$deal->setStatus('won');
 		$deal->setPartyId($person->id);
@@ -344,7 +370,7 @@ class CwwHighriseInterface {
 		$deal->setOwnerId($this->_config['deals_admin_user_id']);
 		$deal->setAuthorId($this->_config['deals_admin_user_id']);
 		$deal->setResponsiblePartyId($this->_config['deals_admin_user_id']);
-		if ($product['type'] == 'monthly' || $product['type'] == 'annual')
+		if ( $product['type'] == 'monthly' || $product['type'] == 'annual' )
 			$deal->setDuration($product['duration']);
 		
 		$deal->save();
@@ -386,7 +412,7 @@ class CwwHighriseInterface {
 	/****************************************************************************************/
 	protected function _getDealCategoryId($category, $type) {
 		// GENERAL
-		if (!$category || preg_match('/general/i', $category)) {
+		if ( !$category || preg_match( '/general/i', $category ) ) {
 			switch ($type) {
 				case 'monthly':
 					return $this->_config['general_monthly_deal_category_id'];
@@ -400,11 +426,11 @@ class CwwHighriseInterface {
 		}
 		
 		// BUSINESS PARTNER
-		if (preg_match('/business/i', $category))
+		if ( preg_match( '/business/i', $category ) )
 			return $this->_config['business_monthly_deal_category_id'];
 	 
 		// RESCUE
-		if (preg_match('/rescue/i', $category))
+		if ( preg_match( '/rescue/i', $category ) )
 			return $this->_config['rescue_onetime_deal_category_id'];
 			
 		// RESTORE

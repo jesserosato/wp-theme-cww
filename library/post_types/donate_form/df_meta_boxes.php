@@ -2,6 +2,16 @@
 function cww_df_meta_boxes($mailchimp = false, $highrise = false) {
 	$meta_boxes = array();
 	$meta_boxes['cww_df_settings'] = array();
+	// Back end
+	$meta_boxes['cww_df_settings']['cww_df_private_form'] = array(
+		'handle'	=> 'cww_df_private_form',
+		'title' 	=> __('Private form'),
+		'args'		=> array(
+			'type' 		=> 'checkbox',
+			'desc' 		=> __("Check this box if this form should be used only by administrators to enter cash or check donations."),
+			'default' 	=> '',
+		)
+	);
 	// Confirmation post ID
 	$meta_boxes['cww_df_settings']['cww_df_conf_post_id'] = array(
 		'handle'	=> 'cww_df_conf_post_id',

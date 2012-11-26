@@ -19,7 +19,8 @@ class FormProcessor {
 			throw new Exception('FormProcessor expects that form has been submitted via POST.');
 		if( $method == 'GET' && empty( $_GET ) )
 			throw new Exception('FormProcessor expects that form has been submitted via GET.');
-		$raw = $method == 'POST' ? $_POST : $_GET;
+
+		$raw 						= $method == 'POST' ? $_POST : $_GET;		
 		$this->clean				= $this->sanitize_data($raw);
 		$this->errors				= array();
 		$this->error_msgs			= array();
@@ -109,7 +110,6 @@ class FormProcessor {
 	public function required_fields_set( ) {
 		if ( empty( $this->required_fields ) )
 			return true;
-			
 		$result = true;
 		foreach ( $this->required_fields as $field ) {
 			if ( empty( $this->clean[$field] ) ) {
@@ -170,7 +170,7 @@ class FormProcessor {
 	/*
 	/* @return bool
 	/************************************************************************************/
-	function validate_card_num($num, $key = 'card_num') {
+	function validate_card_number($num, $key = 'card_num') {
 		$filter_options = array('options' => array('regexp' => '/^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6011[0-9]{12}|3(?:0[0-5]|[68][0-9])[0-9]{11}|3[47][0-9]{13})$/'));
 		if ( !filter_var( $num, FILTER_VALIDATE_REGEXP, $filter_options ) ) {
 			$this->errors[$key] = 'format';

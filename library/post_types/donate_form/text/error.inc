@@ -71,6 +71,21 @@ $df_error_msgs = array(
 	'df_amount_onetime' => array(
 		'empty' => 'Please enter the amount for your one-time contribution.',
 		'format' => 'Please enter the amount you would like to contribute, e.g. 250.25',
+	),
+	'df_pay_method' => array(
+		'empty' => 'Please choose a payment method.'
+	),
+	'df_check_bank' => array(
+		'empty' => 'Please enter the bank account name into which the donation was deposited.',
+		'format' => 'The bank account name must be letters only.'
+	),
+	'df_check_number' => array(
+		'empty' => 'Please enter the check number.',
+		'format' => 'The check number must be numbers only.'
+	),
+	'df_cash_bank' => array(
+		'empty' => 'Please enter the bank account name into which the donation was deposited.',
+		'format' => 'The bank account name must be letters only.'
 	)
 );
 
