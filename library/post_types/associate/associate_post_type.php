@@ -104,8 +104,10 @@ function cww_associate_get_content($associate_id = fale, $type = 'single') {
 	$post = $associate_id ? get_post( $associate_id ) : $post;
 	global $cww_associate_type;
 	$cww_associate_type = $type;
-	
-	$result = '' . get_template_part('template', 'associate');
+	ob_start();
+	get_template_part('template', 'associate');
+	$result = ob_get_contents();
+	ob_end_clean();
 	$post = $old_post;
 	return $result;
 }

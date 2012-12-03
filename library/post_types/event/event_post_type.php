@@ -149,7 +149,12 @@ function cww_event_get_content( $event_id = false, $type = 'single' ) {
 	$cww_event_type	= $type;
 	$old_post		= $post;
 	$post			= $event_id ? get_post($event_id) : $post;
-	$result			= '' . get_template_part('template', 'event');
+	error_log(get_post_meta($post->ID, 'cww_event_start_date', true));
+	error_log(get_post_meta($post->ID, 'cww_event_start_time', true));
+	ob_start();
+	get_template_part('template', 'event');
+	$result = ob_get_contents();
+	ob_end_clean();
 	$post			= $old_post;
 	return $result;
 }
@@ -179,14 +184,15 @@ function cww_event_single_shortcode_callback( $atts, $content = null ) {
 add_shortcode( 'events', 'cww_event_multiple_shortcode_callback' );
 function cww_event_multiple_shortcode_callback( $atts, $content = null ) {
 	$category = empty($atts['category']) ? false : $atts['category'];
-	$category = get_category_by_slug($category);
 	$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
 	$args = array(
 		'post_type' => 'cww_event',
-		'paged' => $paged
+		'paged' => $paged,
+		'meta_key' => 'cww_event_start_date',
+		'orderby' => 'cww_event_start_date',
 	);
 	if ($category)
-		$args['category'] = $category->term_id;
+		$args['category_name'] = $category;
 	$events = get_posts($args);
 	$result = '';
 	foreach ( $events as $event )

@@ -19,11 +19,12 @@ if ( !empty( $_POST['df_post_id'] ) ) {
 	if ( $df_ok ) {
 		$df_processor->error_msgs = $df_post_process_error_msgs;
 		$df_processor->submit_data_to_highrise();
-		//$df_processor->submit_data_to_mailchimp();
-		if ( !$is_priv_form ) $df_processor->send_confirmation_mail();
+		$df_processor->submit_data_to_mailchimp();
+		$df_processor->send_confirmation_mail();
 		$df_processor->redirect();
 	} else {
 		global $df_errors;
+		global $df_clean;
 		$df_errors = $df_processor->get_errors();
 		$df_clean  = $df_processor->get_sanitized_data();
 		if (empty($df_errors['form']))
