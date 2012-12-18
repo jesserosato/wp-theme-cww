@@ -7,7 +7,7 @@
 require_once(ABSPATH . '/wp-content/themes/cww/library/utilities/CwwPostTypeEngine.class.php');
 require_once('event_meta_boxes.php');
 
-$cww_event_desc = __('You can use the data entered below via shortcodes. Click the "more info" link on a setting to see an example of its associated shortcode.', 'cww') . '<br />' . __('There are two shortcodes for displaying entire events:', 'cww') . '<br /><strong>Single event shortcode</strong>: [event eventid="1234"]<br /><strong>Multiple event shortcode</strong>: [events category="category_slug"]';
+$cww_event_desc = __('You can use the data entered below via shortcodes. Click the "more info" link on a setting to see an example of its associated shortcode.', 'cww') . '<br />' . __('There are two shortcodes for displaying entire events:', 'cww') . '<br /><strong>Single event shortcode</strong>: [event eventid="1234"]<br /><strong>Multiple event shortcode</strong>: [events category="{slug}" number="{defaults to all}" order="{ASC or DESC}" order_by"{start-date or post-date}" upcoming_only="{true or omit}" over_only="{true or omit}"]';
 
 $cww_event_post_type = array(
 	'handle'	=> 'cww_event',
@@ -81,9 +81,11 @@ function cww_event_save_post( $post_id ) {
 	foreach ( $_POST as $key => $value ) {
 		if ( preg_match( '/^cww_event_.*/', $key ) ) {
 			// Times
-			if (is_array($value)) {
+			if ( is_array( $value ) )
 				$value = $value[1] . ':' . $value[2] . $value[3];
-			}
+			// Dates
+			if ( preg_match('/date/', $key ) )
+				$value = strtotime($value);
 			update_post_meta( $post_id, $key, trim( $value ) );
 		}
 	}
@@ -98,14 +100,22 @@ function cww_event_save_post( $post_id ) {
 /************************************************************************************/
 function cww_event_is_over( $event_id = false ) {
 	if (!$event_id) {
-		$post = $GLOBALS['post'];
+		global $post;
 		$event_id = $post->ID;
 	}
 	$end_date = get_post_meta($event_id, 'cww_event_end_date', true);
+	if ( is_numeric( $end_date ) ) {
+	    if ( $end_date > 99999999 ) {
+			$end_date = date('Y-m-d', $end_date);   
+	    } else {
+			$end_date = substr_replace($end_date, '-', 4, 0);
+			$end_date = substr_replace($end_date, '-', 7, 0);
+		}
+	}
 	$end_time = get_post_meta($event_id, 'cww_event_end_time', true);
 	$end = strtotime($end_date . ' ' . $end_time);
 	$now = time();
-	return $now > $end;
+	return $now >= $end;
 }
 
 /************************************************************************************ 
@@ -149,8 +159,6 @@ function cww_event_get_content( $event_id = false, $type = 'single' ) {
 	$cww_event_type	= $type;
 	$old_post		= $post;
 	$post			= $event_id ? get_post($event_id) : $post;
-	error_log(get_post_meta($post->ID, 'cww_event_start_date', true));
-	error_log(get_post_meta($post->ID, 'cww_event_start_time', true));
 	ob_start();
 	get_template_part('template', 'event');
 	$result = ob_get_contents();
@@ -183,16 +191,45 @@ function cww_event_single_shortcode_callback( $atts, $content = null ) {
 /************************************************************************************/
 add_shortcode( 'events', 'cww_event_multiple_shortcode_callback' );
 function cww_event_multiple_shortcode_callback( $atts, $content = null ) {
-	$category = empty($atts['category']) ? false : $atts['category'];
+	$defaults_array = array(
+		'order_by' => 'start-date',
+		'upcoming_only' => false,
+		'over_only' => false,
+		'category' => false,
+		'order' => 'DESC',
+		'order_by' => false,
+		'number' => -1			// Defaults to all qualifying events
+	);
+	extract(shortcode_atts( $defaults_array, $atts ));
 	$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
 	$args = array(
 		'post_type' => 'cww_event',
 		'paged' => $paged,
-		'meta_key' => 'cww_event_start_date',
-		'orderby' => 'cww_event_start_date',
+		'order' => $order,
+		'posts_per_page' => $number
 	);
-	if ($category)
+	// If order by is set to start-date, use start date, else use default (post date)
+	if ( $order_by == 'start-date' ) {
+		$args['meta_key'] = 'cww_event_start_date';
+		$args['orderby'] = 'meta_value_num';
+	}
+	// 'category_name' is actually category slug
+	if ( $category )
 		$args['category_name'] = $category;
+	// If only one of upcoming_only or over_only, then get events ending either after today,
+	// or on or before today respectively.
+	if ( $upcoming_only xor $over_only ) {
+		$relation = $upcoming_only ? '>' : '<=';
+		$args['meta_query'] = array(
+			array(
+				'key' => 'cww_event_start_date',
+				'value' => time(),
+				'type' => 'NUMERIC',
+				'compare' => $relation,
+			),
+		);
+	}
+	error_log(print_r($args,true));
 	$events = get_posts($args);
 	$result = '';
 	foreach ( $events as $event )
@@ -213,7 +250,7 @@ function cww_event_startdate_shortcode_callback( $atts, $content = null ) {
 	$post = empty($atts['eventid']) ? $GLOBALS['post'] : get_post($atts['eventid']);
 	$format = empty($atts['format']) ? 'l, F jS, Y' : $atts['format'];
 	$start_date = get_post_meta($post->ID, 'cww_event_start_date', true);
-	return date($format, strtotime($start_date));
+	return date($format, $start_date);
 }
 
 /************************************************************************************ 
@@ -243,7 +280,7 @@ function cww_event_enddate_shortcode_callback( $atts, $content = null ) {
 	$post = empty($atts['eventid']) ? $GLOBALS['post'] : get_post($atts['eventid']);
 	$format = empty($atts['format']) ? 'l, F jS, Y' : $atts['format'];
 	$end_date = get_post_meta($post->ID, 'cww_event_end_date', true);
-	return date($format, strtotime($end_date));
+	return date($format, $end_date);
 }
 
 /************************************************************************************ 

@@ -15,7 +15,7 @@ $cww_event_post_id		= $cww_event_post->ID;
 $event_is_over	= cww_event_is_over( $cww_event_post_id );
 $after_post_id	= get_post_meta($cww_event_post_id, 'cww_event_after_post_id', true);
 if ( $after_post_id &&  $event_is_over )
-	$the_post = get_post($after_post_id);
+	$cww_event_post = get_post($after_post_id);
 
 if ($cww_event_type == 'single' || $cww_event_type == 'multi-full') {
 	$content = apply_filters('the_content', $cww_event_post->post_content);

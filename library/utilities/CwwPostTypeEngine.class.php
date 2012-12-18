@@ -153,7 +153,32 @@ class CwwPostTypeEngine {
 			case 'group_end':
 				echo '</div>';
 			break;
+			case 'select':
+				$options = $meta_box['args']['options'];
+				?>
+				<select
+					class="<?php echo $meta_box_class; ?>"
+					id="<?php echo $meta_box_key; ?>"
+					name="<?php echo $meta_box_key; ?>"
+				>
+				<?php
+				foreach ( $options as $key => $value )
+					echo '<option value="' . $key . '">' . $value . '</option>';
+				?>
+				</select>
+				<?php
 			case 'date':
+			    // convert the date from timestamp to dash separated
+			    if ( is_numeric( $meta_box_val ) ) {
+			        if ( $meta_box_val > 99999999 ) {
+			        	// Timestamp (new style)
+			    		$meta_box_val = date('Y-m-d', $meta_box_val);
+			    	} else {
+			    		// Ymd (old style)
+			    		$meta_box_val = substr_replace($meta_box_val, '-', 4, 0);
+			    		$meta_box_val = substr_replace($meta_box_val, '-', 7, 0);
+			    	}
+			    }
 				?>
 				<input
 					type="text"

@@ -188,7 +188,7 @@ class CwwHighriseInterface {
 			}
 			$deal_link = '<a href="https://' . $this->_hr->account . '.highrisehq.com/deals/' . $deal->id . '">' . $deal->id . '</a>';
 			$note_body_parts  = array(
-				"Site" => $url,
+				"Site" => $source,
 				"Name" => $name,
 				"Type" => $product_type,
 				"Category" => $product_category,

@@ -7,7 +7,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/highris
 // - Mailchimp interface
 require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/mailchimp/MailchimpCww.php';
 // Load parent class
-require_once ($_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/utilities/FormProcessor.class.php');
+require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/utilities/FormProcessor.class.php';
 /************************************************************************************ 
 /* A class for processing Donate Form entries
 /* By Jesse Rosato, 2012 - jesse.rosato@gmail.com
@@ -28,6 +28,8 @@ class CwwDonateFormProcessor extends FormProcessor {
 		unset($_POST['df_post_id']);
 		
 		parent::__construct();
+		
+		error_log(print_r($_POST, true));
 		
 		$this->set_meta_data();
 		$this->set_settings();
@@ -127,7 +129,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 				'df_type',
 				'df_pay_method',
 				'df_firstname',
-				'df_lastname',
+				'df_lastname'
 			);
 		} else {
 			$this->required_fields = array(
@@ -176,10 +178,10 @@ class CwwDonateFormProcessor extends FormProcessor {
 				return;
 				
 			if ( $this->clean['df_pay_method'] == 'check' ) {
-				$this->required_fields[]	= 'df_check_bank';
+				$this->required_fields[]	= 'df_check_source';
 				$this->required_fields[]	= 'df_check_number';
 			} else  {
-				$this->required_fields[]	= 'df_cash_bank';
+				$this->required_fields[]	= 'df_cash_source';
 			}
 		}
 	} // end set_required_fields()
@@ -675,10 +677,10 @@ class CwwDonateFormProcessor extends FormProcessor {
 			// - Cash or check
 			$this->data['donation']['pay_method'] = $this->clean['df_pay_method'];
 			if ( $this->data['donation']['pay_method'] == 'check' ) {
-				$this->data['check']['bank']	= $this->clean['df_check_bank'];
+				$this->data['check']['bank']	= $this->clean['df_check_source'];
 				$this->data['check']['number']	= $this->clean['df_check_number'];
 			} else {
-				$this->data['cash']['bank']		= $this->clean['df_cash_bank'];
+				$this->data['cash']['bank']		= $this->clean['df_cash_source'];
 			}
 		} else {
 			// - Payment type data

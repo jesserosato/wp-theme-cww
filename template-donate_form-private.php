@@ -6,7 +6,9 @@
  */
 require_once('library/post_types/donate_form/text/countries.inc');
 require_once('library/post_types/donate_form/text/error.inc');
+require_once('library/post_types/donate_form/text/payment_sources.inc');
 global $df_errors;
+global $df_clean;
 
 $df_countries_options = '';
 // If the user hasn't picked a country, default to U.S., otherwise, use the user's choice.
@@ -129,13 +131,19 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
       <label for="df_pay_method-cash" class="radio option">Cash </label>
     </div>
     <div id="check-wrap" class="pay-method-wrap check-wrap" <?php echo (empty($df_clean['df_pay_method']) || $df_clean['df_pay_method'] == 'cash' ? 'style="display: none;"' : ''); ?>>
-      <?php if ( !empty( $df_errors['df_check_bank'] ) ) : ?>
-      <div class="error message check-bank">
-        <?php echo $df_error_msgs['df_check_bank'][$df_errors['df_check_bank']]; ?>
+      <?php if ( !empty( $df_errors['df_check_source'] ) ) : ?>
+      <div class="error message check-source">
+        <?php echo $df_error_msgs['df_check_source'][$df_errors['df_check_source']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_check_bank"><span class="required">Bank</span></label>
-      <input id="df_check_bank" name="df_check_bank" value="<?php echo (!empty($df_clean['df_check_bank']) ? $df_clean['df_check_bank'] : ''); ?>" type="text" />
+      <label for="df_check_source"><span class="required">Source</span></label>
+      <select id="df_check_source" name="df_check_source">
+      	<?php foreach ( $df_payment_sources as $key => $payment_source ) {
+	      	echo '<option value="' . $key . '"';
+	      	echo $df_clean['df_check_source'] == $key ? 'checked="checked"' : '';
+	      	echo '>' . $payment_source . '</option>';
+      	} ?>
+      </select>
       <br />
       <?php if ( !empty( $df_errors['df_check_number'] ) ) :  ?>
       <div class="error message check-number">
@@ -146,13 +154,19 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
       <input id="df_check_number" name="df_check_number" value="<?php echo (!empty($df_clean['df_check_number']) ? $df_clean['df_check_number'] : ''); ?>" type="text" />
     </div><!-- end #check-wrap !-->
     <div id="cash-wrap" class="pay-method-wrap cash-wrap" <?php echo (empty($df_clean['df_pay_method']) || $df_clean['df_pay_method'] == 'check' ? 'style="display: none;"' : ''); ?>>
-      <?php if ( !empty( $df_errors['df_cash_bank'] ) ) : ?>
+      <?php if ( !empty( $df_errors['df_cash_source'] ) ) : ?>
       <div class="error message cash-bank">
-        <?php echo $df_error_msgs['df_cash_bank'][$df_errors['df_cash_bank']]; ?>
+        <?php echo $df_error_msgs['df_cash_source'][$df_errors['df_cash_source']]; ?>
       </div>
       <?php endif; ?>
-      <label for="df_cash_bank"><span class="required">Bank</span></label>
-      <input id="df_cash_bank" name="df_cash_bank" value="<?php echo (!empty($df_clean['']) ? $df_clean['df_cash_bank'] : ''); ?>" type="text" />
+      <label for="df_cash_source"><span class="required">Source</span></label>
+      <select id="df_cash_source" name="df_cash_source">
+      	<?php foreach ( $df_payment_sources as $key => $payment_source ) {
+	      	echo '<option value="' . $key . '"';
+	      	echo $df_clean['df_cash_source'] == $key ? 'checked="checked"' : '';
+	      	echo '>' . $payment_source . '</option>';
+      	} ?>
+      </select>
     </div><!-- end #cash-wrap !-->
   </div><!-- end #payment-wrap !-->
   <div id="donor-wrap" class="donor-wrap">

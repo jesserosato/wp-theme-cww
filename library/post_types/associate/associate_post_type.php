@@ -8,7 +8,7 @@ require_once(ABSPATH . '/wp-content/themes/cww/library/utilities/CwwPostTypeEngi
 require_once('associate_meta_boxes.php');
 
 
-$cww_associate_desc = 'The associate post type provides two shortcodes (the curly brackets and their contents in the examples that follow should be replaced with the appropriate information).  To display a single associate in "excerpt" view, use: <br /><br /><strong style="display:block; text-align: center;">[associate associateid={associate post id} excerpt={true or false}]</strong><br /> Note: the associate ID is required for the single associate shortcode.<br /> Display multiple associates as follows (all of the parameters are optional):<br /><br /><strong style="display:block; text-align: center;">[associates relationship={relationship slug} category={category slug} order={ASC or DESC} number={# to display}]</strong><br />.  For parameter "order", "ASC" (the default) displays the oldest posts first and "DESC" displays the newest posts first.  For parameter "number" (default = 5), use "-1" to display all posts within the relationship and category of your choosing.';
+$cww_associate_desc = 'The associate post type provides two shortcodes (the curly brackets and their contents in the examples that follow should be replaced with the appropriate information).  To display a single associate in "excerpt" view, use: <br /><br /><strong style="display:block; text-align: center;">[associate associateid={associate post id} excerpt={true or false}]</strong><br /> Note: the associate ID is required for the single associate shortcode.<br /> Display multiple associates as follows (all of the parameters are optional):<br /><br /><strong style="display:block; text-align: center;">[associates relationship={relationship slug} category={category slug} order_by={field} excerpt={TRUE or omit} order={ASC or DESC} number={# to display}]</strong><br />.  The "order_by" parameter can be any one of "first name", "last name", "organization" or "position". For the "order" paramater, "ASC" (the default) displays the oldest posts first and "DESC" displays the newest posts first.  For parameter "number" (default = 5), use "-1" to display all posts within the relationship and category of your choosing.';
 $cww_associate_post_type = array(
 	'handle'	=> 'cww_associate',
 	'args'		=>array(
@@ -175,22 +175,25 @@ function cww_associate_multiple_shortcode_callback( $atts, $content = null ) {
 	if ( $post->post_type == 'cww_associate' )
 		return '<p class="error">Oops!  The associates shortcode cannot be used within an associate post.</p>';
 	$defaults_array = array(
-		'relationship' => false,
-		'category' => false,
 		'order' => 'ASC',
-		'number' => 5
+		'number' => 5,
+		'category' => false,
+		'relationship' => false,
+		'order_by' => false,
+		'excerpt' => false,
 	);
 	extract(shortcode_atts( $defaults_array, $atts ));
-	$category = get_category_by_slug($category);
 	$args = array(
 		'post_type' => 'cww_associate',
 		'posts_per_page' => $number,
 		'posts_per_archive_page' => $number,
 		'order' => $order,
 	);
-	if ($category)
-		$args['cat'] = $category->term_id;
-	if ($relationship) {
+	// Select associate posts from category with slug $category.
+	if ( $category )
+		$args['category_name'] = $category;
+	// Select associate posts with relationship $relationship
+	if ( $relationship ) {
 		$args['tax_query'] = array(
 			array(
 				'taxonomy' => 'cww_associate_relationships',
@@ -199,12 +202,21 @@ function cww_associate_multiple_shortcode_callback( $atts, $content = null ) {
 			)
 		);
 	}
+	// Order by one of: 'first name', 'last name', 'organization' or 'position'.
+	if ( $order_by ) {
+		$order_by = strtolower(str_replace(' ', '_', $order_by));
+		if (in_array( $order_by, array('first_name', 'last_name', 'organization', 'position' ) ) ) {
+			$args['meta_key'] = 'cww_associate_' . $order_by;
+			$args['orderby'] = 'meta_value';
+		}
+	}
+
 	$result = '';
 	$associates_query = new WP_Query( $args );
-
 	while ( $associates_query->have_posts() ) {
+		$context = $excerpt ? 'multi' : 'multi-full';
 		$associates_query->the_post();
-		$result .= cww_associate_get_content( get_the_ID(), 'multi');
+		$result .= cww_associate_get_content( get_the_ID(), $context );
 	}
 	return $result;
 }

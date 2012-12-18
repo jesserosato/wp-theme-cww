@@ -209,6 +209,11 @@ form.donate #cc-logos {
 	padding: 0 16px 16px 0;
 }
 
+.cww-associate {
+	display: block;
+	clear: both;
+}
+
 .ways-you-can-help h4 {
 	vertical-align: middle;
 	clear: both;
@@ -224,4 +229,8 @@ form.donate #cc-logos {
 .postid-112 footer > div.inner,
 .postid-112 #footer_shadow {
 	display: none;
+}
+
+.framed_box_content {
+	padding-bottom: 20px !important;
 }
