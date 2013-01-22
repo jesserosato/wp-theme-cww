@@ -127,8 +127,8 @@ class CwwSettingsEngine {
 	        'id'      => 'cww_options_field',				// the ID of the setting in our options array, and the ID of the HTML form element  
 	        'title'   => 'Field',							// the label for the HTML form element  
 	        'desc'    => 'This is a default description.',  // the description displayed under the HTML form element  
-	        'std'     => '',  // the default value for this setting  
-	        'type'    => 'text',  // the HTML form element to use  
+	        'std'     => '', 								// the default value for this setting  
+	        'type'    => 'text',							// the HTML form element to use  
 	        'section' => 'main_section',                    // the section this setting belongs to — must match the array key of a section in wptuts_options_page_sections()  
 	        'choices' => array(),                           // (optional): the values in radio buttons or a drop-down menu  
 	        'class'   => ''                                 // the HTML form element class. Also used for validation purposes!  
@@ -164,12 +164,12 @@ class CwwSettingsEngine {
 	    $options = get_option($option_name);  
 	      
 	    // pass the standard value if the option is not yet set in the database  
-	    if ( !isset( $options[$id] ) && 'type' != 'checkbox' ) {  
+	    if ( empty( $options[$id] ) && 'type' != 'checkbox' ) {  
 	        $options[$id] = $std;  
 	    }  
 	      
 	    // additional field class. output only if the class is defined in the create_setting arguments  
-	    $field_class = ($class != '') ? ' ' . $class : '';  
+	    $field_class = !empty($class) ? $class : '';  
 	      
 	      
 	    // switch html display based on the setting type.  
@@ -177,9 +177,15 @@ class CwwSettingsEngine {
 	        case 'text':  
 	            $options[$id] = stripslashes($options[$id]);  
 	            $options[$id] = esc_attr( $options[$id]);  
-	            echo "<input class='regular-text$field_class' type='text' id='$id' name='" . $option_name . "[$id]' value='$options[$id]' />";  
+	            echo "<input class='regular-text $field_class' type='text' id='$id' name='" . $option_name . "[$id]' value='$options[$id]' />";  
 	            echo ($desc != '') ? "<br /><span class='description'>$desc</span>" : "";  
-	        break;  
+	        break;
+	        
+	        case 'password':  
+	            $options[$id] = esc_attr(stripslashes($options[$id]));  
+	            echo "<input class='regular-text $field_class' type='password' id='$id' name='" . $option_name . "[$id]' value='$options[$id]' />";  
+	            echo ($desc != '') ? "<br /><span class='description'>$desc</span>" : "";  
+	        break;    
 	          
 	        case "multi-text":  
 	            foreach($choices as $item) {  
@@ -207,7 +213,7 @@ class CwwSettingsEngine {
 	        break;  
 	          
 	        case 'select':  
-	            echo "<select id='$id' class='select$field_class' name='" . $option_name . "[$id]'>";  
+	            echo "<select id='$id' class='select $field_class' name='" . $option_name . "[$id]'>";  
 	                foreach($choices as $item) {  
 	                    $value  = esc_attr($item, 'cww');  
 	                    $item   = esc_html($item, 'cww');  
@@ -220,7 +226,7 @@ class CwwSettingsEngine {
 	        break;  
 	          
 	        case 'select2':  
-	            echo "<select id='$id' class='select$field_class' name='" . $option_name . "[$id]'>";  
+	            echo "<select id='$id' class='select $field_class' name='" . $option_name . "[$id]'>";  
 	            foreach($choices as $item) {  
 	                  
 	                $item = explode("|",$item);  
@@ -234,7 +240,7 @@ class CwwSettingsEngine {
 	        break;  
 	          
 	        case 'checkbox':  
-	            echo "<input class='checkbox$field_class' type='checkbox' id='$id' name='" . $option_name . "[$id]' value='1' " . checked( $options[$id], 1, false ) . " />";  
+	            echo "<input class='checkbox $field_class' type='checkbox' id='$id' name='" . $option_name . "[$id]' value='1' " . checked( $options[$id], 1, false ) . " />";  
 	            echo ($desc != '') ? "<br /><span class='description'>$desc</span>" : "";  
 	        break;  
 	          
@@ -252,7 +258,7 @@ class CwwSettingsEngine {
 	                    }  
 	                }  
 	                  
-	                echo "<input class='checkbox$field_class' type='checkbox' id='$id|$item[1]' name='" . $option_name . "[$id|$item[1]]' value='1' $checked /> $item[0] <br/>";  
+	                echo "<input class='checkbox $field_class' type='checkbox' id='$id|$item[1]' name='" . $option_name . "[$id|$item[1]]' value='1' $checked /> $item[0] <br/>";  
 	            }  
 	            echo ($desc != '') ? "<br /><span class='description'>$desc</span>" : "";  
 	        break;  
@@ -275,8 +281,8 @@ class CwwSettingsEngine {
 	    foreach ($options as $option) {
 	    	$key = $option['id'];
 	    	$val = trim($input[$key]);
-	    	if (isset($option['req']) && $option['req']) {
-	    		if (!$val) {
+	    	if ( !empty( $option['req'] )) {
+	    		if ( empty($val) || $val == $option['std'] ) {
 	    			$error_msg = __("The field") . " '" . $option['title'] . "' " . __('is required', 'cww') . '.';
 			    	add_settings_error($key, $key . '_error', $error_msg, 'error');
 	            } else {

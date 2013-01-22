@@ -12,6 +12,9 @@ $df_error_msgs = array(
 	'df_lastname' => array(
 		'empty' => 'The last name field is required.',
 	),
+	'df_company' => array(
+		'empty' => 'The name of the organization making this donation is required.',
+	),
 	'df_address' => array(
 		'empty' => 'The street address field is required.',
 	),

@@ -25,6 +25,33 @@ jQuery(document).ready(function($) {;
 	$("#cancel-donate").click(function(){
 		window.location = "/";							   
 	});
+	
+	// Initialize the "company" field label
+	var donor_type = $("#df_donor_type");
+	var selected = $(":selected", donor_type);
+	if ( selected.val() == 'Individual' ) {
+		$("label[for='df_company']").html("Company: ");
+	} else {
+		var required = $('<span class="required">');
+		required.html('*');
+		$("label[for='df_company']").html(selected.val() + ": ");
+		$("label[for='df_company']").prepend(required);
+	}
+	
+	
+	$("#df_donor_type").change(function(){
+		var selected = $(':selected', this);
+		
+		if( selected.val() =='Individual' ) {
+			$("label[for='df_company']").children('.required').remove();
+			$("label[for='df_company']").html("Company: ");
+		} else {
+			var required = $('<span class="required">');
+			required.html('*');
+			$("label[for='df_company']").html(selected.val() + ": ");
+			$("label[for='df_company']").prepend(required);
+		}
+	});
 
 	$('#donateform').submit(function() {
 		$('#df_submit').attr('disabled', 'disabled');
@@ -32,6 +59,26 @@ jQuery(document).ready(function($) {;
 		$('#cancel-donate').attr('disabled', 'disabled');
 		$('#cancel-donate').addClass('disabled');
 		return true;
+	});
+	
+	$('a.external').on('click', function(e) {
+		e.preventDefault();
+		$('#screen').toggle();
+		var modal = $('#modal');
+		if ( modal.html() ) {
+			modal.html('');
+		} else {
+			var frame = $('<iframe>');
+			frame.attr('src', this.href);
+			modal.html(frame);
+		}
+		modal.toggle();
+	});
+	
+	$("#screen").on('click', function(e) {
+		$("#modal").hide();
+		$("#modal").html('');
+		$("#screen").hide();
 	});
 
 });

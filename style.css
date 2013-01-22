@@ -234,3 +234,32 @@ form.donate #cc-logos {
 .framed_box_content {
 	padding-bottom: 20px !important;
 }
+
+#screen {
+	z-index: 201;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0,0,0,.5);
+	display: none;
+}
+
+#modal {
+	z-index: 202;
+	position: fixed;
+	top: 10%;
+	left: 10%;
+	width: 80%;
+	height: 80%;
+	background-color: rgba(255, 255, 255, .8);
+	display: none;
+	box-shadow: rgba(0,0,0,.5) 12px 12px 12px;
+	border: 1px solid #CACACA;
+}
+
+#modal iframe {
+	height: 100%;
+	width: 100%;
+}

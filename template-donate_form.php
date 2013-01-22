@@ -1,29 +1,39 @@
 <?php
+// TO-DO: ADD DONOR TYPE FIELD (Individual | Business/Corporation | Church/Religious Organization)
+
 /*
  * Event post type template
  *
  * BE VERY CAREFUL WHEN EDITING THIS FILE!!
  */
 require_once('library/post_types/donate_form/text/countries.inc');
+require_once('library/post_types/donate_form/text/salutations.inc');
 require_once('library/post_types/donate_form/text/error.inc');
 global $df_errors;
+global $df_clean;
 
 $df_countries_options = '';
 // If the user hasn't picked a country, default to U.S., otherwise, use the user's choice.
-$df_selected_country = empty($df_clean['country']) ? __('United States') : $df_clean['country'];
-foreach( $df_countries as $country ) {
+$df_selected_country = empty($df_clean['df_country']) ? __('United States') : $df_clean['df_country'];
+foreach ( $df_countries as $country ) {
 	$df_countries_options .= '<option value="' . $country . '" ';
 	if ( $country == $df_selected_country )
 		$df_countries_options .= 'selected="selected" ';
-	$df_countries_options .= '/>' . $country . '</option>';
+	$df_countries_options .= '>' . $country . '</option>';
 }
 
-$df_mc_list_id = get_post_meta($post->ID, 'cww_df_mc_list_id', true);
-$df_mc_api_token = get_option('cww_df_options', false);
-if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
-	$df_mc_api_token = $df_mc_api_token['cww_df_mailchimp_setting_api_token'];
-?>
+$df_salutation_options = '';
+$df_selected_salutation = empty($df_clean['df_salutation']) ? '' : $df_clean['df_salutation'];
+foreach ( $df_salutations as $salutation ) {
+	$df_salutation_options .= '<option value="' . $salutation . '" ';
+	if ( $salutation == $df_selected_salutation )
+		$df_salutation_options .= 'selected="selected" ';
+	$df_salutation_options .= '>' . $salutation . '</option>';
+}
 
+?>
+<div id="screen"></div>
+<div id="modal"></div>
 <form id="donateform" class="donate" method="POST" enctype="multipart/form-data"><input type="hidden" />
   <input type="hidden" name="df_post_id" id="df_post_id" value="<?php echo $post->ID; ?>" />
   <?php if (!empty($df_errors['form'])) : ?>
@@ -34,17 +44,15 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
   <p><span class="required">*</span>Required fields</p>
   <div id="type-wrap" class="input-wrap radio" >
     <label for="df_type" class="radio main"><span class="required">*</span>Financial Commitment Types</label><br />
-    <?php if (!empty($df_errors['df_type'])) { ?>
+    <?php if (!empty($df_errors['df_type'])) : ?>
     <div class="error message donation-type">
      <?php echo $df_error_msgs['df_type'][$df_errors['df_type']]; ?>
     </div>
-    <?php } ?>
+    <?php endif; ?>
     <input type="radio" name="df_type" value="monthly" <?php echo (!empty($df_clean['df_type']) && $df_clean['df_type'] == 'monthly' ? 'checked="checked"' : ''); ?> />
     <label for="df_type" class="radio option">Monthly Partner</label>
     <input type="radio" name="df_type" value="annual" <?php echo (!empty($df_clean['df_type']) && $df_clean['df_type'] == 'annual' ? 'checked="checked"' : ''); ?> />
     <label for="df_type" class="radio option">Annual Donation</label>
-    <input type="radio" name="df_type" value="business" <?php echo (!empty($df_clean['df_type']) && $df_clean['df_type'] == 'business' ? 'checked="checked"' : ''); ?> />
-    <label for="df_type" class="radio option">Business Partner</label>
     <input type="radio" name="df_type" value="onetime" <?php echo (!empty($df_clean['df_type']) && $df_clean['df_type'] == 'onetime' ? 'checked="checked"' : ''); ?> />
     <label for="df_type" class="radio option">One Time Gift</label>
   </div>
@@ -79,22 +87,6 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
         $300 or more per year commitment qualifies you for the Courage Partner program.
       </div>
     </div><!-- end #annual-wrap !-->
-    <div id="business-wrap" class="amount-wrap" <?php echo ((empty($df_clean['df_type'])) || ($df_clean['df_type'] != 'business') ? 'style="display: none;"' : ''); ?>>
-      <?php if (!empty($df_errors['df_amount_business'])) : ?>
-      <div class="error message amount-business">
-        <?php echo $df_error_msgs['df_amount_business'][$df_errors['df_amount_business']]; ?>
-      </div>
-      <?php endif; ?>
-      <div id="amount-business-wrap" class="input-wrap text">
-        <label for="df_amount_business">
-          <span class="required">*</span>Business Partner Amount - Enter amount: $
-        </label>
-        <input id="df_amount_business" value="<?php echo (!empty($df_clean['df_amount_business']) ? $df_clean['df_amount_business'] : ''); ?>" type="text" name="df_amount_business" size="10" />
-        <div class="info">
-          $100 or more per month or a $1,200 annual commitment qualifies you for the Courage Business Partner program.
-        </div>
-      </div><!-- end #business-amount-wrap !-->
-    </div><!-- end #business-wrap !-->
     <div id="onetime-wrap" class="amount-wrap" <?php echo ((empty($df_clean['df_type'])) || ($df_clean['df_type'] != 'onetime') ? 'style="display: none;"' : ''); ?>>
       <?php if (!empty($df_errors['df_amount_onetime'])) : ?>
       <div class="error message amount-onetime">
@@ -158,7 +150,7 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
       <label for="df_card_code"><span class="required">*</span>Security Code:</label>
       <input id="df_card_code" class="input_text" value="<?php echo (!empty($df_clean['df_card_code']) ? $df_clean['df_card_code'] : ''); ?>" type="text" name="df_card_code" size="5" maxlength="4" />
       <span class="input-info">
-        <a id="aCardCodeWhatsThis" class="modal-extern" href="https://account.authorize.net/help/Miscellaneous/Pop-up_Terms/Virtual_Terminal/Card_Code.htm" target="_blank">
+        <a id="aCardCodeWhatsThis" class="external" href="https://account.authorize.net/help/Miscellaneous/Pop-up_Terms/Virtual_Terminal/Card_Code.htm">
           What's this?
         </a>
       </span>
@@ -167,6 +159,12 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
   <div id="donor-wrap" class="donor-wrap">
     <h3>Your Information</h3>
     <p><span class="required">*</span>Required fields</p>
+    <div id="salutation-wrap" class="input-wrap select">
+      <label for="df_salutation">Salutation:</label>
+      <select id="df_salutation" name="df_salutation">
+        <?php echo $df_salutation_options; ?>
+      </select>
+    </div>
     <div id="firstname-wrap" class="input-wrap text">
       <?php if (!empty($df_errors['df_firstname'])) : ?>
       <div class="error message">
@@ -185,9 +183,27 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
       <label for="df_lastname"><span class="required">*</span>Last Name:</label>
       <input id="df_lastname" value="<?php echo (!empty($df_clean['df_lastname']) ? $df_clean['df_lastname'] : ''); ?>" type="text" name="df_lastname" />
     </div>
+    <div id="donor-type-wrap" class="donor-type-wrap" >
+      <?php if (!empty($df_errors['df_donor_type'])) : ?>
+      <div class="error message">
+        <?php echo $df_error_msgs['df_donor_type'][$df_errors['df_donor_type']]; ?>
+      </div>
+      <?php endif; ?>
+      <label for="df_donor_type" class="select"><span class="required">*</span>This donation is being made on behalf of: </label>
+      <select id="df_donor_type" name="df_donor_type">
+        <option value="Individual" <?php if(empty($df_clean['df_donor_type']) || $df_clean['df_donor_type'] == 'Individual') echo 'selected="selected"'; ?>>Myself</option>
+        <option value="Business/Corporation" <?php if (!empty($df_clean['df_donor_type']) && ($df_clean['df_donor_type'] == 'Business/Corporation')) echo 'selected="selected"'; ?>>A Business/Corporation</option>
+        <option value="Church/Religious Organization" <?php if (!empty($df_clean['df_donor_type']) && ($df_clean['df_donor_type'] == 'Church/Religious Organization')) echo 'selected="selected"'; ?>>A Church/Religious Organization</option>
+      </select>
+    </div>
     <div id="company-wrap" class="input-wrap text">
+      <?php if (!empty($df_errors['df_company'])) : ?>
+      <div class="error message">
+        <?php echo $df_error_msgs['df_company'][$df_errors['df_company']]; ?>
+      </div>
+      <?php endif; ?>
       <label for="df_company">Company:</label>
-      <input id="df_company" type="text" name="df_company" />
+      <input id="df_company" type="text" name="df_company" value="<?php echo (!empty($df_clean['df_company']) ? $df_clean['df_company'] : ''); ?>" />
     </div>
     <div id="address-wrap" class="input-wrap text long">
       <?php if (!empty($df_errors['df_address'])) : ?>
@@ -256,19 +272,14 @@ if( !empty($df_mc_api_token['cww_df_mailchimp_setting_api_token']) )
     </div>
     <div id="notes-wrap" class="input-wrap textarea">
       <label for="df_notes">Notes:</label>
-      <textarea id="df_notes" name="df_notes" cols="33" rows="4">
-	    <?php echo (!empty($df_clean['df_notes']) ? $df_clean['df_notes'] : ''); ?>
-      </textarea>
+      <textarea id="df_notes" name="df_notes" cols="33" rows="4"><?php echo (!empty($df_clean['df_notes']) ? $df_clean['df_notes'] : ''); ?></textarea>
     </div>
-    <?php if ($df_mc_api_token && $df_mc_list_id) : ?>
     <div id="subscribe-wrap" class="input-wrap checkbox single">
       <input id="df_subscribe" type="checkbox" name="df_subscribe" value="1" <?php echo (empty($df_clean) || (!empty($df_clean['df_subscribe']) && $df_clean['df_subscribe']) ? 'checked="checked"' : ''); ?> style="padding-right: 16px;" />
       <label for="df_subscribe" class="single-checkbox">Get news and information about <?php echo get_bloginfo('name'); ?></label>
     </div>
-    <?php endif; ?>
   </div><!-- end #donor-wrap !-->
   <div id="button-wrap">
-    <input id="cancel-donate" type="button" class="cancel button" name="cancel-donate" value="Cancel" /></td>
-    <input id="df_submit" type="submit" class="submit button" name="df_submit" value="Donate" /></td>
+    <input id="df_submit" type="submit" class="submit button" name="df_submit" value="Donate" />
   </div><!-- end #button-wrap !-->
 </form>

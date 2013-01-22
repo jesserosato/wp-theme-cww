@@ -1,13 +1,9 @@
 <?php
-// Load third-party services
-// - Authorize.net SDK
-require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/authorizenet/AuthorizeNet.php'; 
-// - Highrise interface
-require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/highrise/CwwHighriseInterface.class.php';
-// - Mailchimp interface
-require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/mailchimp/MailchimpCww.php';
+// Authorize.net SDK
+require_once dirname(dirname(__DIR__)) . '/services//authorizenet/AuthorizeNet.php'; 
 // Load parent class
-require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-content/themes/cww/library/utilities/FormProcessor.class.php';
+require_once dirname(dirname(__DIR__)) . '/utilities/FormProcessor.class.php';
+
 /************************************************************************************ 
 /* A class for processing Donate Form entries
 /* By Jesse Rosato, 2012 - jesse.rosato@gmail.com
@@ -28,8 +24,6 @@ class CwwDonateFormProcessor extends FormProcessor {
 		unset($_POST['df_post_id']);
 		
 		parent::__construct();
-		
-		error_log(print_r($_POST, true));
 		
 		$this->set_meta_data();
 		$this->set_settings();
@@ -53,15 +47,21 @@ class CwwDonateFormProcessor extends FormProcessor {
 			$this->meta_data['org_mail']		= get_bloginfo('admin_email');
 		}
 		
+		// Alias meta fields to make them more manageable for use
 		$meta_fields = array(
-			'monthly_duration'	=> 'cww_df_monthly_duration',
-			'annual_duration'	=> 'cww_df_annual_duration',
-			'mc_list_id'		=> 'cww_df_mc_list_id',
-			'hr_update'			=> 'cww_df_update_hr',
-			'hr_deals_admin_id'	=> 'cww_df_hr_deals_admin_id',
-			'conf_post_id'		=> 'cww_df_conf_post_id',
-			'conf_mail_post_id'	=> 'cww_df_conf_mail_post_id',
-			'is_private_form'	=> 'cww_df_private_form'
+			'monthly_duration'			=> 'cww_df_monthly_duration',
+			'annual_duration'			=> 'cww_df_annual_duration',
+			'mc_list_id'				=> 'cww_df_mc_list_id',
+			'sf_update'					=> 'cww_df_sf_update',
+			'sf_campaign'				=> 'cww_df_sf_campaign',
+			'sf_category'				=> 'cww_df_sf_category',
+			'sf_task_user'				=> 'cww_df_sf_task_user',
+			'sf_donation_exp_task_desc'	=> 'cww_df_sf_donation_exp_task_desc',
+			'sf_card_exp_task_desc'		=> 'cww_df_sf_card_exp_task_desc',
+			'hr_update'					=> 'cww_df_hr_update',
+			'hr_deals_admin_id'			=> 'cww_df_hr_deals_admin_id',
+			'conf_post_id'				=> 'cww_df_conf_post_id',
+			'conf_mail_post_id'			=> 'cww_df_conf_mail_post_id',
 		);
 		
 		foreach ( $meta_fields as $key => $field)
@@ -71,7 +71,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 		if ( !is_numeric( $this->meta_data['conf_post_id'] ) )
 			$this->meta_data['conf_post_id'] = $this->post_id;
 		if ( !is_numeric( $this->meta_data['conf_mail_post_id'] ) ) 
-			$this->meta_data['conf_mail_post_id'] = $this->meta_data['conf_post_id'];
+			$this->meta_data['conf_mail_post_id'] = false;
 			
 		return $this->meta_data;
 	} // end set_meta_data()
@@ -121,34 +121,25 @@ class CwwDonateFormProcessor extends FormProcessor {
 			return;
 		}
 		
-		$is_private_form = $this->meta_data['is_private_form'];
+		$this->required_fields = array(
+			'df_firstname',
+			'df_lastname', 
+			'df_address', 
+			'df_city', 
+			'df_state', 
+			'df_zip', 
+			'df_country', 
+			'df_phone', 
+			'df_email',
+			'df_donor_type',
+			'df_type',
+			'df_card_num',
+			'df_exp_date',
+			'df_card_code'
+		);
 		
-		// Set appropriate required fields based on whether form is private or not
-		if ( $is_private_form ) {
-			$this->required_fields = array(
-				'df_type',
-				'df_pay_method',
-				'df_firstname',
-				'df_lastname'
-			);
-		} else {
-			$this->required_fields = array(
-				'df_firstname',
-				'df_lastname', 
-				'df_address', 
-				'df_city', 
-				'df_state', 
-				'df_zip', 
-				'df_country', 
-				'df_phone', 
-				'df_email',
-				'df_type',
-				'df_card_num',
-				'df_exp_date',
-				'df_card_code'
-			);
-			
-		}
+		if ( !empty( $this->clean['df_donor_type'] ) && $this->clean['df_donor_type'] != 'Individual' )
+			$this->required_fields[]		= 'df_company';
 		
 		// Only set extended required fields if data has been sanitized
 		// and donation type has been chosen.
@@ -164,25 +155,9 @@ class CwwDonateFormProcessor extends FormProcessor {
 				$this->required_fields[]	= 'df_amount_annual';
 				$this->required_fields[] 	= 'df_startdate';
 				break;
-			case "business":
-				$this->required_fields[]	= 'df_amount_business';
-				$this->required_fields[] 	= 'df_startdate';
-				break;
 			case "onetime":
 				$this->required_fields[]	= 'df_amount_onetime';
 				break;
-		}
-		
-		if ( $is_private_form ) {
-			if ( empty( $this->clean['df_pay_method'] ) )
-				return;
-				
-			if ( $this->clean['df_pay_method'] == 'check' ) {
-				$this->required_fields[]	= 'df_check_source';
-				$this->required_fields[]	= 'df_check_number';
-			} else  {
-				$this->required_fields[]	= 'df_cash_source';
-			}
 		}
 	} // end set_required_fields()
 	
@@ -215,6 +190,8 @@ class CwwDonateFormProcessor extends FormProcessor {
 			
 		$result = array();
 		foreach( $data as $key => $val ) {
+			// Get rid of slashes added by wordpress
+			$val = stripslashes(stripslashes($val));
 			$flag = preg_match('/email/i', $key) ? FILTER_SANITIZE_EMAIL : FILTER_SANITIZE_STRING;
 			$result[$key] = filter_var(trim($val), $flag);
 		}
@@ -270,22 +247,14 @@ class CwwDonateFormProcessor extends FormProcessor {
 		
 		// Validate card info
 		// - Validate credit card number
-		if ( $this->meta_data['is_private_form'] ) {
-			if ( $this->data['donation']['pay_method'] == 'check' ) {
-				if ( !is_numeric( $this->data['check']['number'] ) ) {
-					$this->errors['df_check_number'] = 'format';
-					return false;
-				}
-			}
-		} else {
-			if ( !$this->validate_card_number( $this->data['card']['num'], 'df_card_num' ) )
-				return false;
-			if ( !$this->validate_card_exp( $this->data['card']['exp'], 'df_exp_date' ) )
-				return false;
-			if ( !$this->validate_card_code( $this->data['card']['code'], 'df_card_code') )
-				return false;
-		}
+		if ( !$this->validate_card_number( $this->data['card']['num'], 'df_card_num' ) )
+			return false;
+		if ( !$this->validate_card_exp( $this->data['card']['exp'], 'df_exp_date' ) )
+			return false;
+		if ( !$this->validate_card_code( $this->data['card']['code'], 'df_card_code') )
+			return false;
 		
+		// Everything checks out
 		return true;
 		
 	} // end validate_data()
@@ -374,22 +343,19 @@ class CwwDonateFormProcessor extends FormProcessor {
 	public function submit_recurring_donation() {
 		$request = new AuthorizeNetARB($this->data['authnet']['login'], $this->data['authnet']['key']);
 		
+		// Auth.net expects all recurring donations to be expressed in terms of months,
+		// Therefore annual contributions have an 'intervalLength' of 12 months.
 		$this->data['donation']['interval_unit'] = "months";
-		if (preg_match('/(month)|(business)/i', $this->data['donation']['type'])) {
-			$this->data['donation']['occurrences']	 = $this->meta_data['monthly_duration'];
-		} else {
-			$this->data['donation']['occurrences']	 = 12 * $this->meta_data['annual_duration'];
-		}
 		
 		// Set the subscription fields.
 		$name = $this->data['donor']['first_name'] . ' ' . $this->data['donor']['last_name'];
 		$subscription = new AuthorizeNet_Subscription;
 		// Donation data
-		$subscription->name = $name;
+		$subscription->name						= $name;
 		$subscription->intervalLength			= $this->data['donation']['interval'];
 		$subscription->intervalUnit				= $this->data['donation']['interval_unit'];
 		$subscription->startDate				= $this->data['donation']['start_date'];
-		$subscription->totalOccurrences			= $this->data['donation']['occurrences'];
+		$subscription->totalOccurrences			= $this->data['donation']['installments'];
 		$subscription->amount					= $this->data['donation']['amount'];
 		// Card data
 		$subscription->creditCardCardNumber		= $this->data['card']['num'];
@@ -414,121 +380,6 @@ class CwwDonateFormProcessor extends FormProcessor {
 	} // end submit_recurring_donation()
 	
 	/************************************************************************************ 
-	/* Submit data to Highrise (if settings and meta data call for it).
-	/*
-	/* @return bool
-	/************************************************************************************/
-	public function submit_data_to_highrise() {
-		if ( empty( $this->meta_data['hr_update'] ) )
-			return false;
-		// Process Highrise transaction data.		
-		$type = $this->data['donation']['type_code'] == 'business' ? 'monthly' : $this->data['donation']['type_code'];
-		if ($type == 'monthly')
-			$duration = $this->meta_data['monthly_duration'];
-		if ($type == 'annual')
-			$duration = $this->meta_data['annual_duration'];
-		if (empty($duration))
-			$duration = 0;
-		if ($type != 'onetime')
-			$start = $this->data['donation']['start_date'];
-		$tags = array();
-		$tag_arr = wp_get_post_tags($this->post_id);
-		foreach ($tag_arr as $tag_obj) {
-			$tags[] = $tag_obj->name;
-		}
-		$hr_transaction	= array(
-			'source' 		=> $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'],
-			'tags' 			=> $tags,
-			'products' 		=> array(
-				0 => array(
-					'amount' => $this->data['donation']['amount'],
-					'type' => $type,
-					'duration' => $duration
-				),
-			),
-		);
-		
-		if ( $this->meta_data['is_private_form'] ) {
-			$pay_method = $this->data['donation']['pay_method'];
-			$hr_transaction['pay_method'] = strtoupper($pay_method);
-			$hr_transaction['account'] = $this->data[$pay_method]['bank'];
-			$hr_transaction['id'] = $pay_method == 'check' ? $this->data['check']['number'] : false;
-		} else {
-			if ( !empty( $this->data['donation']['transaction_id'] ) )
-				$hr_transaction['id'] = $this->data['donation']['transaction_id'];
-			else
-				$hr_transaction['id'] = $this->data['donation']['subscription_id'];
-			$hr_transaction['account']		= 'AUTH.NET';
-			$hr_transaction['pay_method'] 	= $this->card_type($this->data['card']['num']);
-			$hr_transaction['card_exp']		= $this->data['card']['exp'];
-		}
-		
-		if (isset($start))
-			$hr_transaction['products'][0]['start_date'] = $start;
-		if ($this->data['donation']['type_code'] == 'business')
-			$hr_transaction['products'][0]['category'] = 'business';
-		
-		if ( empty( $this->settings['cww_df_highrise_setting_account'] ) )
-			return false;
-		$hr_account = $this->settings['cww_df_highrise_setting_account'];
-		if ( empty( $this->settings['cww_df_highrise_setting_api_token'] ) )
-			return false;
-		$hr_token	= $this->settings['cww_df_highrise_setting_api_token'];	
-			
-		$hr_config_fields = array(
-			'admin_user_id' => 'cww_df_highrise_setting_admin_user_id',
-			'admin_group_id' => 'cww_df_highrise_setting_admin_group_id',
-			'deals_admin_user_id' => 'cww_df_highrise_setting_deals_admin_user_id',
-			'task_delay' => 'cww_df_highrise_setting_task_delay',
-			'general_onetime_deal_category_id' => 'cww_df_highrise_setting_onetime_category_id',
-			'general_monthly_deal_category_id' => 'cww_df_highrise_setting_monthly_category_id',
-			'general_annual_deal_category_id' =>'cww_df_highrise_setting_annual_category_id',
-			'business_monthly_deal_category_id' => 'cww_df_highrise_setting_business_category_id'
-		);
-		$hr_config = array();
-		foreach ( $hr_config_fields as $index => $key ) {
-			if ( empty( $this->settings[$key] ) )
-				return false;
-			$hr_config[$index] = $this->settings[$key];
-		}
-		
-		try {
-			$hr = new CwwHighriseInterface($hr_config, $hr_account, $hr_token);
-			$person = $hr->syncContact($this->data['donor']);
-			$hr->addTransaction($hr_transaction, $person);
-		} catch(Exception $e) {
-			if( WP_DEBUG === true ) {
-				error_log($e->getMessage());
-			}
-			return false;
-		}
-		return true;
-	} // end submit_data_to_highrise()
-	
-	/************************************************************************************ 
-	/* Submit data to Mailchimp (if settings and meta data call for it).
-	/*
-	/* @return bool
-	/************************************************************************************/
-	public function submit_data_to_mailchimp( $data = false ) {
-		if ( empty( $data ) || !is_array( $data ) )
-			$data = $this->data;
-
-		if ( empty( $this->meta_data['mc_list_id'] ) || empty( $data['donor']['subscribe'] ) )
-			return false;
-		if ( empty( $this->settings['cww_df_mailchimp_setting_api_token'] ))
-			return false;
-		if ( empty( $this->data['donor']['email'] ) )
-			return false;
-		syncMailchimpContact(
-			$data['donor'], 
-			$this->settings['cww_df_mailchimp_setting_api_token'], 
-			$this->meta_data['mc_list_id']
-		);
-		return true;
-	} // end submit_data_to_mailchimp()
-	
-	/************************************************************************************ 
 	/* Send confirmation email.
 	/*
 	/* @param array $data
@@ -536,14 +387,15 @@ class CwwDonateFormProcessor extends FormProcessor {
 	/* @return bool
 	/************************************************************************************/
 	public function send_confirmation_mail( $data = false ) {
+		if ( !function_exists( 'get_post' ) || empty( $this->meta_data['conf_mail_post_id'] ) )
+		
+			return false;
 		if ( empty( $data ) || !is_array( $data ) )
 			$data = $this->data;
 		
-		if ( !function_exists( 'get_post' ) )
-			return false;
 		$mail_post		= get_post($this->meta_data['conf_mail_post_id']);
 		$mail_body		= $mail_post->post_content;
-		$mail_body		= apply_filters('the_content', $this->_token_replace($mail_body));
+		$mail_body		= apply_filters('the_content', $this->token_replace($mail_body));
 		$mail_subject	= $mail_post->post_title;
 		$mail_headers	= 'From: ' . $this->meta_data['org'] . ' <' . $this->meta_data['org_mail'] . '>';
 		add_filter('wp_mail_content_type',create_function('', 'return "text/html"; '));
@@ -584,7 +436,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 			}
 			$pass_data['conf_content'] .= '</ul></div>';
 		}
-		$pass_data['conf_content'] .= apply_filters('the_content', $this->_token_replace($conf_post->post_content));
+		$pass_data['conf_content'] .= apply_filters('the_content', $this->token_replace($conf_post->post_content));
 		$pass_data['conf_post_id'] = $this->meta_data['conf_post_id'];
 		set_transient($trans_key, serialize($pass_data), 300);
 		// Redirect to confirmation page.
@@ -608,19 +460,15 @@ class CwwDonateFormProcessor extends FormProcessor {
 	/*
 	/* @return string
 	/************************************************************************************/
-	protected function _token_replace( $text, $data = false ) {
+	public function token_replace( $text, $data = false ) {
 		if ( empty( $data ) || !is_array( $data ) )
 			$data = $this->data;
-		
-		if ( $this->meta_data['is_private_form'] ) {
-			if ( $data['donation']['pay_method'] == 'check' )
-				$transaction_id = $this->data['check']['number'];
-		} else {
-			if ( !empty( $data['donation']['subscription_id'] ) )
-				$transaction_id = $data['donation']['subscription_id'];
-			else if ( !empty( $data['donation']['transaction_id'] ) )
-				$transaction_id = $data['donation']['transaction_id'];
-		}
+
+		if ( !empty( $data['donation']['subscription_id'] ) )
+			$transaction_id = $data['donation']['subscription_id'];
+		else if ( !empty( $data['donation']['transaction_id'] ) )
+			$transaction_id = $data['donation']['transaction_id'];
+				
 		if ( !empty( $transaction_id ) )
 			$text = str_replace('%transaction_id', $transaction_id, $text);
 			
@@ -634,12 +482,12 @@ class CwwDonateFormProcessor extends FormProcessor {
 			$text = str_replace('%address', $address, $text);
 		}
 		
+		$text = str_replace('%donor_type', $data['donor']['type'], $text);
+				
 		$text = str_replace('%company', $data['donor']['company'], $text);
 		
-		if ( !$this->meta_data['is_private_form'] ) {
-			$card_num = substr($data['card']['num'], -4);
-			$text = str_replace('%card_number', $card_num, $text);
-		}
+		$card_num = substr($data['card']['num'], -4);
+		$text = str_replace('%card_number', $card_num, $text);
 		
 		$amount = '$' . number_format($data['donation']['amount'], 2);
 		$text = str_replace('%amount', $amount, $text);
@@ -659,8 +507,10 @@ class CwwDonateFormProcessor extends FormProcessor {
 		$this->data = array();
 		// Customer data
 		$this->data['donor'] = array();
+		$this->data['donor']['salutation']		= $this->clean['df_salutation'];
 		$this->data['donor']['first_name'] 		= $this->clean['df_firstname'];
 		$this->data['donor']['last_name'] 		= $this->clean['df_lastname'];
+		$this->data['donor']['type']			= $this->clean['df_donor_type'];
 		$this->data['donor']['company'] 		= $this->clean['df_company'];
 		$this->data['donor']['address'] 		= $this->clean['df_address'];
 		$this->data['donor']['city'] 			= $this->clean['df_city'];
@@ -672,24 +522,12 @@ class CwwDonateFormProcessor extends FormProcessor {
 		$this->data['donor']['notes']			= $this->clean['df_notes'];
 		$this->data['donor']['subscribe'] 		= empty($this->clean['df_subscribe']) ? false : $this->clean['df_subscribe'];
 		
-		// Make sure pay_method is set before organizing pay method data
-		if ( !empty( $this->clean['df_pay_method'] ) && $this->meta_data['is_private_form'] ) {
-			// - Cash or check
-			$this->data['donation']['pay_method'] = $this->clean['df_pay_method'];
-			if ( $this->data['donation']['pay_method'] == 'check' ) {
-				$this->data['check']['bank']	= $this->clean['df_check_source'];
-				$this->data['check']['number']	= $this->clean['df_check_number'];
-			} else {
-				$this->data['cash']['bank']		= $this->clean['df_cash_source'];
-			}
-		} else {
-			// - Payment type data
-			// - Card data: SECURITY RISK!! DO NOT STORE!!! ONLY FOR AUTHORIZE.NET
-			$this->data['card'] = array();
-			$this->data['card']['num']  			= $this->clean['df_card_num']; 
-			$this->data['card']['exp']  			= $this->clean['df_exp_date'];
-			$this->data['card']['code'] 			= $this->clean['df_card_code'];
-		}
+		// - Card data: SECURITY RISK!! DO NOT STORE!!! ONLY FOR AUTHORIZE.NET
+		$this->data['card'] = array();
+		$this->data['card']['num']  			= $this->clean['df_card_num']; 
+		$this->data['card']['exp']  			= $this->clean['df_exp_date'];
+		$this->data['card']['code'] 			= $this->clean['df_card_code'];
+
 		// - Transaction data
 		$this->data['donation']['start_date']	= $this->clean['df_startdate'];
 		// Make sure donation type is set before organizing donation type data
@@ -702,18 +540,16 @@ class CwwDonateFormProcessor extends FormProcessor {
 					$this->data['donation']['interval']		= '1';
 					$this->data['donation']['type']			= 'Monthly Partner';
 					$this->data['donation']['recurring']	= true;
+					$this->data['donation']['period']		= 'monthly';
+					$this->data['donation']['installments'] = $this->meta_data['monthly_duration'];
 					break;
 				case 'annual':
 					$this->data['donation']['amount']		= $this->clean['df_amount_annual'];
 					$this->data['donation']['interval']		= '12';
 					$this->data['donation']['type']			= 'Annual Donation';
 					$this->data['donation']['recurring']	= true;
-					break;
-				case 'business':
-					$this->data['donation']['amount']		= $this->clean['df_amount_business'];
-					$this->data['donation']['interval']		= '1';
-					$this->data['donation']['type']			= 'Business Partner';
-					$this->data['donation']['recurring']	= true;
+					$this->data['donation']['period']		= 'yearly';
+					$this->data['donation']['installments'] = $this->meta_data['annual_duration'];
 					break;
 				case 'onetime':
 					$this->data['donation']['type']			= 'One Time';

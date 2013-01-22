@@ -20,7 +20,7 @@ class FormProcessor {
 		if( $method == 'GET' && empty( $_GET ) )
 			throw new Exception('FormProcessor expects that form has been submitted via GET.');
 
-		$raw 						= $method == 'POST' ? $_POST : $_GET;		
+		$raw 						= $method == 'POST' ? $_POST : $_GET;	
 		$this->clean				= $this->sanitize_data($raw);
 		$this->errors				= array();
 		$this->error_msgs			= array();

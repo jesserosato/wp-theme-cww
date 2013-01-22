@@ -229,7 +229,6 @@ function cww_event_multiple_shortcode_callback( $atts, $content = null ) {
 			),
 		);
 	}
-	error_log(print_r($args,true));
 	$events = get_posts($args);
 	$result = '';
 	foreach ( $events as $event )

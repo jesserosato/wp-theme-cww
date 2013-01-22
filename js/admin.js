@@ -17,7 +17,7 @@ jQuery(document).ready(function($) {
 		// look for the label with the "for" attribute=setting title and give it an "error" class (style this in the css file!)  
         $("label[for='" + error_setting + "']").addClass('error');  
           
-        // look for the input with id=setting title and add a red border to it.  
+        // look for the input with id=setting title and give it an "error" class (style this in the css file!)
         $("#" + error_setting).addClass('error');
 	});
 });

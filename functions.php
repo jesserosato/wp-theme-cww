@@ -2,12 +2,16 @@
 /****************************************************************
  * Functions for the Courage Worldwide theme.
  ****************************************************************/
-if (is_admin())
-	require_once('library/post_types/donate_form/df_settings.php');
+require_once('library/utilities/JmrFileTools.php');
 
-require_once('library/post_types/donate_form/df_post_type.php');
-require_once('library/post_types/event/event_post_type.php');
-require_once('library/post_types/associate/associate_post_type.php');
+// Load Third-Party Services and allow them to register action hooks
+require_files(dirname(__FILE__) . '/library/services', '/^functions.php$/');
+ 
+if (is_admin())
+	require_once('library/post_types/donate_form/settings.php');
+
+// Load Post Types
+require_files(dirname(__FILE__) . '/library/post_types', '/post_type.php/');
 
 add_action('wp_enqueue_scripts', 'cww_scripts');
 add_action('wp_enqueue_scripts', 'cww_styles');
