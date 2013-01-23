@@ -11,7 +11,7 @@ add_action('cww_df_post_process', 'cww_df_submit_data_to_salesforce', 1, 3);
 /*
 /* @return bool
 /************************************************************************************/
-function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {	
+function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 	if ( empty( $data ) || !is_array( $data ) )
 		return false;
 	if ( empty( $meta_data ) || !is_array( $meta_data ) )
@@ -21,8 +21,16 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 		
 	if ( !cww_df_salesforce_is_enabled() || empty( $meta_data['sf_update'] ) )
 		return false;
-		
-	// Strip slashes from data
+	
+	// Unencode data for Salesforce
+	foreach ( $data as $class => $arr ) {
+		if (!is_array($arr))
+			continue;
+		foreach( $arr as $key => $val ) {
+			if ( !is_array( $val ) )
+				$data[$class][$key] = htmlspecialchars_decode($val, ENT_QUOTES);
+		}
+	}
 	
 	
 	$sf_info = array(
@@ -43,6 +51,7 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 		'MailingCountry'						=> $data['donor']['country'],
 		'MailingPostalCode'						=> $data['donor']['zip'],
 		'MailingStreet'							=> $data['donor']['address'],
+		'Phone'									=> $data['donor']['phone'],
 		'org'									=> array(
 			'meta' => array(
 				'is_donor' => ($data['donor']['type'] != 'Individual')
@@ -51,17 +60,16 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 			'Type' => $data['donor']['type']
 		),
 	);
-	
 	// If the donation is from an individual, but a company is provided, set the company
 	// type to none.
-	if ( ( $data['donor']['type'] == 'Individual' ) && !empty( $data['donor']['company'] ) )
-		unset($contact['org']['Type']);
+	if ( !( $contact['org']['meta']['is_donor'] == 'Individual' ) && !empty( $contact['org']['Name'] ) )
+		$contact['org']['Type'] = 'Unknown';
 		 
 	
 	$payment = array('Payment_Method' => 'Credit Card');
 	
 	if ( $data['donation']['recurring'] ) {
-		$card_exp_date = '20' . substr(2,2,$data['card']['exp']) . '-' . substr(0,2,$data['card']['exp']) . '23';
+		$card_exp_date = '20' . substr($data['card']['exp'], 2, 2) . '-' . substr($data['card']['exp'], 0, 2) . '-23';
 		$card_exp_date = date('Y-m-t', strtotime($card_exp_date));
 		$donation = array(
 			'meta'								=> array(
@@ -69,15 +77,16 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 			),
 			'Campaign'							=> $meta_data['sf_campaign'],
 			'Amount'							=> $data['donation']['amount'],
+			'Schedule_Type'						=> 'Multiply By',
 			'Initial_Payment_Method'			=> 'Credit Card',
 			'Initial_Payment_Method_Expiration' => $card_exp_date,
 			'Subscription_Id'					=> $data['donation']['subscription_id'],
 			'Description'						=> $data['donor']['notes'],
 			'Donation_Category'					=> $meta_data['sf_category'],
-			'Date_Established'					=> date('Y-m-d'),
+			'Date_Established'					=> $data['donation']['start_date'],
 			'Installment_Period'				=> $data['donation']['period'],
 			'Installments'						=> $data['donation']['installments'],
-			'Open_Ended_Status'					=> 'Open',
+			'Open_Ended_Status'					=> 'None',
 		);
 		$donation_exp_task_due_date = recurrence_end_date($donation['Date_Established'], $donation['Installment_Period'], $donation['Installments']);
 		$donation_exp_task_due_date = date('Y-m-d', strtotime('-1 month', strtotime($donation_exp_task_due_date)));
@@ -121,6 +130,8 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 	// Save the contact (ESSENTIAL)
 	if ( !( $contact_id	= $sf_interface->upsert_contact($contact, "Name_and_Email_Ext_Id__c" ) ) )
 		return false;
+		
+	
 	
 	// Add Organization and affiliation between Organizatin and Contact if necessary
 	if ( !empty( $contact['org']['Name'] ) && ( $org_id = $sf_interface->get_org_id( $contact['org'], true ) ) )
@@ -129,7 +140,6 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 	// Save the donation (ESSENTIAL)
 	if ( !( $donation['Id'] = $sf_interface->create_donation( $donation, $contact ) ) )
 		return false;
-
 		
 	// Add tasks and custom fields to single donations associated with recurring donation
 	// if necessary.
@@ -141,9 +151,6 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 	} else {
 		$sf_interface->update_donation_payment($payment, $donation['Id']);
 	}
-	
-	// Log any errors
-	error_log(print_r($sf_interface->get_errors(), true));
 }
 
 

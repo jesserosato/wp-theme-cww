@@ -142,19 +142,20 @@ class FormProcessor {
 	/*
 	/* @param string $date
 	/* @param string $key
-	/* @param DateTime $after
+	/* @param string $after timestamp
 	/*
 	/* @return bool
 	/************************************************************************************/
-	public function validate_start_date( $date, $key = 'startdate', DateTime $after = null ) {
+	public function validate_start_date( $date, $key = 'startdate', $after = false ) {
 		$filter_options = array('options' => array('regexp' => '/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/'));
 		if ( !filter_var( $date, FILTER_VALIDATE_REGEXP, $filter_options ) ) {
 			$this->errors[$key] = 'format';
 			return false;
-		} else if ($after) {
-			$now = $after->getTimestamp();
+		}
+		if ($after) {
+			$after = strtotime($after);
 			$start = strtotime($date);
-			if ($start < $now) {
+			if ($start < $after) {
 				$this->errors[$key] = 'invalid';
 				return false;
 			}

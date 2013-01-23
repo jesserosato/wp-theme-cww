@@ -3,9 +3,9 @@ require_once('SalesforceSOAPAPIInterface.class.php');
 
 class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 {
-	public function __construct($sf_info, $debug = false)
+	public function __construct($sf_info)
 	{
-		parent::__construct($sf_info, $debug);
+		parent::__construct($sf_info);
 	}
 	
 	/**
@@ -175,13 +175,6 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 			'prefix'	=> 'npe03'
 		);
 		$donation['meta'] = array_merge($donation['meta'], $meta);
-		// IMPORTANT
-		// All new recurring donations set to open
-		$donation['Open_Ended_Status'] = array(
-			'custom'	=> true,
-			'prefix'	=> true,
-			'value'		=> 'Open'
-		);
 		// USER PROVIDED DATA
 		// - All recurring donations are associated with an organization.
 		//   If the donation is from an individual, it's associated with
@@ -191,32 +184,27 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 			'prefix'	=> true,
 			'callback'	=> array('get_org_id'),
 			'args'		=> array($contact['org'], false),
-			'required'	=> true
 		);
-		$donation['Date_Established'] = array(
-			'custom'	=> true,
-			'prefix'	=> true,
-			'value'		=> $donation['Date_Established'],
-			'required'	=> true
+		
+		$prefixed = array(
+			'Date_Established',
+			'Amount',
+			'Installment_Period',
+			'Installments',
+			'Open_Ended_Status',
+			'Schedule_Type'
 		);
-		$donation['Amount'] = array(
-			'custom'	=> true,
-			'prefix'	=> true,
-			'value'		=> $donation['Amount'],
-			'required'	=> true
-		);
-		$donation['Installment_Period'] = array(
-			'custom'	=> true,
-			'prefix'	=> true,
-			'value'		=> $donation['Installment_Period'],
-			'required'	=> true,
-		);
-		$donation['Installments'] = array(
-			'custom'	=> true,
-			'prefix'	=> true,
-			'value'		=> $donation['Installments'],
-			'required'	=> true
-		);
+		
+		foreach( $prefixed as $key ) {
+			if ( !empty( $donation[$key] ) ) {
+				$donation[$key] = array(
+					'custom'	=> true,
+					'prefix'	=> true,
+					'value'		=> $donation[$key]
+				);
+			}
+		}
+		
 		if ( !empty( $donation['Initial_Payment_Method'] ) ) {
 			$donation['Initial_Payment_Method'] = array(
 				'custom'	=> true,
@@ -252,6 +240,7 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 				'value'		=> $donation['Description']
 			);
 		}
+	
 		
 		return $this->prep_sf_obj($donation);
 	}
@@ -280,16 +269,20 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 		$payment['meta'] = empty($payment['meta']) ? $meta : array_merge($payment['meta'], $meta);
 		
 		// DATA
-		$payment['Check_Reference_Number'] = array(
-			'custom'	=> true,
-			'prefix'	=> true,
-			'value'		=> $payment['Check_Reference_Number']
-		);
-		$payment['Payment_Method'] = array(
-			'custom'	=> true,
-			'prefix'	=> true,
-			'value'		=> $payment['Payment_Method']
-		);
+		if ( !empty( $payment['Check_Reference_Number'] ) ) {
+			$payment['Check_Reference_Number'] = array(
+				'custom'	=> true,
+				'prefix'	=> true,
+				'value'		=> $payment['Check_Reference_Number']
+			);
+		}
+		if ( !empty( $payment['Payment_Method'] ) ) {
+			$payment['Payment_Method'] = array(
+				'custom'	=> true,
+				'prefix'	=> true,
+				'value'		=> $payment['Payment_Method']
+			);
+		}
 		
 		$obj = $this->prep_sf_obj($payment);
 		
@@ -373,23 +366,26 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 	 */
 	public function get_org_id( $org, $create = true )
 	{	
+		error_log(print_r($org,true));
 		// Make sure an organization was specified at all.	
 		if ( empty( $org['Name'] ) )
 			return false;
-		
-		$query = "SELECT Id FROM Account WHERE Name = '" . $org['Name'] . "'";
+		// Potentially user data, escape single quotes
+		$org_name = addslashes($org['Name']);
+		$query = "SELECT Id FROM Account WHERE Name = '" . $org_name . "'";
 		
 		if ( !( $response = $this->query($query) ) )
 			return false;
-		
+			
 		// If more than one org is found, avoid conflict.
 		if ( $response->size > 1 )
 			return false;
-		
 		// If no orgs are found, check create 
-		if ( !$response->size )
+		if ( !$response->size ) {
+			error_log("NO RESPONSE SIZE");
 			return $create ? $this->create_org( $org ) : false;
-		
+		}
+		error_log( "ONE ORG FOUND" );
 		// One organization was found, return its id.
 		return $response->current()->Id;
 	}
@@ -406,7 +402,8 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 		// Make sure a RecordType name has been supplied.
 		if ( empty ( $record_type ) )
 			return false;
-		
+		// Potentially user data, escape single quotes
+		$record_type = addslashes($record_type);
 		$query = "SELECT Id FROM RecordType WHERE Name = '" . $record_type . "'";
 		
 		$response = $this->query($query);
@@ -425,7 +422,8 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 	{
 		if ( empty( $campaign_name ) )
 			return false;
-			
+		// Potentially user data, escape single quotes
+		$campaign_name = addslashes($campaign_name);
 		$query = "SELECT Id FROM Campaign WHERE Name = '" . $campaign_name . "'";
 		
 		$response = $this->query($query);
@@ -488,6 +486,7 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 	 */
 	public function get_user_id( $user_name )
 	{
+		$user_name = addslashes($user_name);
 		$query = "SELECT Id FROM User WHERE Name = '" . $user_name . "'";
 		$response = $this->query($query);
 		return ($response && $response->size == 1) ? $response->current()->Id : false;
@@ -543,6 +542,12 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 	 */
 	public function create_affiliation( array $affiliation )
 	{
+		$query = "SELECT Id FROM npe5__Affiliation__c WHERE npe5__Contact__c = '" . $affiliation['Contact'] . "' AND npe5__Organization__c = '" . $affiliation['Organization'] . "'";
+		
+		// If the affiliation already exists, return its Id
+		if ( ( $response = $this->query( $query ) ) && ( $response->size > 0 ) )
+			return $response->current()->Id;
+	
 		if ( !( $obj = $this->prep_affiliation_obj( $affiliation ) ) )
 			return false;
 		

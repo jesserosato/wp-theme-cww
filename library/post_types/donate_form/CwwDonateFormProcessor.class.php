@@ -189,9 +189,11 @@ class CwwDonateFormProcessor extends FormProcessor {
 			throw new Exception('sanitize_data() expects an array of data to sanitize.');
 			
 		$result = array();
+		error_log(print_r($data, true));
 		foreach( $data as $key => $val ) {
 			// Get rid of slashes added by wordpress
-			$val = stripslashes(stripslashes($val));
+			$val = stripslashes($val);
+			error_log($val);
 			$flag = preg_match('/email/i', $key) ? FILTER_SANITIZE_EMAIL : FILTER_SANITIZE_STRING;
 			$result[$key] = filter_var(trim($val), $flag);
 		}
@@ -219,7 +221,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 		
 		// Validate start date	
 		if ($this->data['donation']['recurring']) {
-			if ( $this->validate_start_date( $this->data['donation']['start_date'], new DateTime() ) ) {
+			if ( $this->validate_start_date( $this->data['donation']['start_date'], 'df_startdate', date('Y-m-d') ) ) {
 				// Start date passes muster. Replace non-dash delimiters
 				$this->data['donation']['start_date'] = preg_replace('[-/]', '-', $this->data['donation']['start_date']);
 			} else {
@@ -277,7 +279,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 			// - Recurring
 			$response = $this->submit_recurring_donation($this->data, $this->post_id);
 			// Handle errors thrown during payment processing
-			if($response->xml->messages->resultCode == "Error"){
+			if(!$response || $response->xml->messages->resultCode == "Error"){
 				// Transaction was NOT approved.
 				$this->errors['form'] = 'processing';
 			}else{
@@ -289,7 +291,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 			// - One time
 			$response = $this->submit_onetime_donation($this->data, $this->post_id); 
 			// Handle errors thrown during payment processing
-			if($response->approved){
+			if($response && $response->approved){
 				// Transaction approved.
 				$this->data['donation']['transaction_id'] = $response->transaction_id;
 				$result = true;

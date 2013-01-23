@@ -56,7 +56,7 @@ class SalesforceSOAPAPIInterface
 	 * @return stdClass
 	 *
 	 */
-	public function prep_sf_obj( array $obj_arr, $fields_is_obj = false )
+	public function prep_sf_obj( array $obj_arr )
 	{	
 		$obj = new stdClass();
 		
@@ -106,12 +106,8 @@ class SalesforceSOAPAPIInterface
 				
 			
 			// Assign the property to the objects field property in the appropriate way
-			if ( !empty( $value ) ) {
-				if ( $fields_is_obj )
-					$obj->fields->$field = $value;
-				else
-					$obj->fields[$field] = $value;
-			}
+			if ( !empty( $value ) )
+				$obj->fields[$field] = $value;
 		}
 		
 		return $obj;
