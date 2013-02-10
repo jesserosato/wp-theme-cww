@@ -240,7 +240,6 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 				'value'		=> $donation['Description']
 			);
 		}
-	
 		
 		return $this->prep_sf_obj($donation);
 	}
@@ -366,7 +365,6 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 	 */
 	public function get_org_id( $org, $create = true )
 	{	
-		error_log(print_r($org,true));
 		// Make sure an organization was specified at all.	
 		if ( empty( $org['Name'] ) )
 			return false;
@@ -376,17 +374,12 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 		
 		if ( !( $response = $this->query($query) ) )
 			return false;
-			
-		// If more than one org is found, avoid conflict.
-		if ( $response->size > 1 )
-			return false;
+		
 		// If no orgs are found, check create 
-		if ( !$response->size ) {
-			error_log("NO RESPONSE SIZE");
+		if ( !$response->size )
 			return $create ? $this->create_org( $org ) : false;
-		}
-		error_log( "ONE ORG FOUND" );
-		// One organization was found, return its id.
+		
+		// One organization or more organizations were found, return first id.
 		return $response->current()->Id;
 	}
 	

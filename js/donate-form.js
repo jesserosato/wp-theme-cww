@@ -1,8 +1,11 @@
-jQuery(document).ready(function($) {;
+jQuery(document).ready(function($) {
+	
 	
 	// Display the appropriate donation wrapper if a donation type has been selected.
+	$('.date-wrap').hide();
+	$('.amount-wrap').hide();
 	displayDonationWrapper($("input[name='df_type']:checked").val());
-	var val = $("input[name='df_pay_method']:checked").val()
+	var val = $("input[name='df_pay_method']:checked").val();
 	$("#" + val + "-wrap").show();
 	
 	//donate form events
@@ -19,11 +22,11 @@ jQuery(document).ready(function($) {;
 	$("input[name='df_pay_method']").change(function(){
 		//hide all
 		$(".pay-method-wrap").hide();
-		var val = $("input[name='df_pay_method']:checked").val()
+		var val = $("input[name='df_pay_method']:checked").val();
 		$("#" + val + "-wrap").show();
 	});
 	$("#cancel-donate").click(function(){
-		window.location = "/";							   
+		window.location = "/";
 	});
 	
 	// Initialize the "company" field label
@@ -53,18 +56,26 @@ jQuery(document).ready(function($) {;
 		}
 	});
 
+	// Preload loading background.
+	var modal = $("#modal");
+	var screen = $("#screen");
+	modal.addClass("loading");
+	modal.show();
+	modal.hide();
+	modal.removeClass('loading');
+	// Front and center loading screen
 	$('#donateform').submit(function() {
-		$('#df_submit').attr('disabled', 'disabled');
-		$('#df_submit').addClass('disabled');
-		$('#cancel-donate').attr('disabled', 'disabled');
-		$('#cancel-donate').addClass('disabled');
+		screen.show();
+		screen.off('click');
+		modal.addClass('loading');
+		modal.show();
 		return true;
 	});
 	
+	//
 	$('a.external').on('click', function(e) {
 		e.preventDefault();
-		$('#screen').toggle();
-		var modal = $('#modal');
+		screen.toggle();
 		if ( modal.html() ) {
 			modal.html('');
 		} else {
@@ -76,9 +87,9 @@ jQuery(document).ready(function($) {;
 	});
 	
 	$("#screen").on('click', function(e) {
-		$("#modal").hide();
-		$("#modal").html('');
-		$("#screen").hide();
+		modal.hide();
+		modal.html('');
+		screen.hide();
 	});
 
 });

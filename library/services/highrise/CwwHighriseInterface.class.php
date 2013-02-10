@@ -64,14 +64,16 @@ class CwwHighriseInterface {
 		extract($data);
 		
 		// Create and populate a 'person' object.
-		$found  = true;
 		$email = empty($email) ? false : trim(strtolower($email));
-		$person = $this->loadPerson($first_name, $last_name, $email);
-		if (!$person) {
+		$person = $this->loadPerson($first_name, $last_name, $email );
+		if ( empty($person) ) {
 			$found = false;
 			$person = new HighrisePerson($this->_hr);
 			$person->setFirstName(trim($first_name));
 			$person->setLastName(trim($last_name));
+		} else {
+			$found = true;
+			$person->author_id = '';
 		}
 		
 		// Check whether email address is unique
@@ -90,9 +92,14 @@ class CwwHighriseInterface {
 		$has_address = !empty($address) && !empty($city) && !empty($state) && !empty($zip) && !empty($country);
 		if ( $has_address && ( !$found || $this->isNewAddress( $address, $zip, $person ) ) )
 			$person->addAddress($address, $city, $state, $zip, $country, 'Home');
-		
+
 		// Save person object (must be done before adding notes to person).
-		$person->save();
+		try {
+			$person->save();
+		} catch( Exception $e ) {
+			if ( defined(WP_DEBUG) && WP_DEBUG )
+				error_log(__FILE__ . ": " . $e->getMessage());
+		}
 		
 		// Add user comments as a note.
 		$notes = !empty($notes) ? trim($notes) : false;
@@ -254,12 +261,12 @@ class CwwHighriseInterface {
 			$email = trim(strtolower($email));
 			$people = $this->_hr->findPeopleByEmail($email);
 		} 
-		
 		if ( !$email || empty( $people ) )
 			$people = $this->_hr->findPeopleBySearchTerm($first_name . ' ' . $last_name);
-		
-		if ( empty( $people ) ) return false;
-		
+			
+		if ( empty( $people ) )
+			return false;
+
 		$first_name = trim(strtolower($first_name));
 		$last_name = trim(strtolower($last_name));
 		foreach ( $people as $person ) {

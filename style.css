@@ -263,3 +263,16 @@ form.donate #cc-logos {
 	height: 100%;
 	width: 100%;
 }
+
+#modal.loading {
+	width: 140px;
+	height: 140px;
+	top: 50%;
+	left: 50%;
+	margin-top: -70px;
+	margin-left: -70px;
+	border-radius: 70px;
+	background-image: url(images/large_loading.gif);
+	background-repeat: no-repeat;
+	background-position: center center;
+}

@@ -63,7 +63,7 @@ $df_error_msgs = array(
 		'empty' => 'Please enter the amount you would like to contribute each month.',
 		'format' => 'Please enter the amount you would like to contribute, e.g. 250.25',
 	),
-	'df_amount_annually' => array(
+	'df_amount_annual' => array(
 		'empty' => 'Please enter the amount you would like to contribute annually.',
 		'format' => 'Please enter the amount you would like to contribute, e.g. 250.25',
 	),

@@ -169,17 +169,19 @@ function cww_df_submit_data_to_highrise( $data, $meta_data, $settings )
 		return false;
 	
 	// Process Highrise transaction data.		
-	$type = $data['donation']['type_code'] == $data['donation']['type_code'];
+	$type = $data['donation']['type_code'];
 	if ($type == 'monthly')
 		$duration = $meta_data['monthly_duration'];
 	if ($type == 'annual')
 		$duration = $meta_data['annual_duration'];
+
 	if (empty($duration))
 		$duration = 0;
+		
 	if ($type != 'onetime')
 		$start = $data['donation']['start_date'];
 	$tags = array();
-	$tag_arr = wp_get_post_tags($post_id);
+	$tag_arr = wp_get_post_tags($meta_data['post_id']);
 	foreach ($tag_arr as $tag_obj) {
 		$tags[] = $tag_obj->name;
 	}
@@ -202,7 +204,7 @@ function cww_df_submit_data_to_highrise( $data, $meta_data, $settings )
 		$hr_transaction['id'] = $data['donation']['subscription_id'];
 		
 	$hr_transaction['account']		= 'AUTH.NET';
-	$hr_transaction['pay_method'] 	= $card_type($data['card']['num']);
+	$hr_transaction['pay_method'] 	= $data['card']['type'];
 	$hr_transaction['card_exp']		= $data['card']['exp'];
 	
 	if (isset($start))
@@ -231,13 +233,31 @@ function cww_df_submit_data_to_highrise( $data, $meta_data, $settings )
 		$hr_config[$index] = $settings[$key];
 	}
 	
+	$hr_accepts = array(
+		'first_name', 
+		'last_name',  
+		'company',
+		'address',
+		'city',
+		'state',
+		'zip',
+		'country',
+		'phone',
+		'email',
+		'notes',
+	); 
+	foreach( $data['donor'] as $key => $val ) {
+		if ( !in_array($key, $hr_accepts) )
+			unset($data['donor'][$key]);
+	}
+	
 	try {
 		$hr = new CwwHighriseInterface($hr_config, $hr_account, $hr_token);
 		$person = $hr->syncContact($data['donor']);
 		$hr->addTransaction($hr_transaction, $person);
 	} catch(Exception $e) {
 		if( WP_DEBUG === true ) {
-			error_log($e->getMessage());
+			error_log(__FILE__ . ": " . $e->getMessage());
 		}
 		return false;
 	}

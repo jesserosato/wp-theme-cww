@@ -255,6 +255,16 @@ function cww_df_add_salesforce_meta_boxes( $meta_boxes )
 			)
 		);
 		
+		$meta_boxes['cww_df_settings']['cww_df_sf_owner'] = array(
+			'handle'	=> 'cww_df_sf_owner',
+			'title'		=> __('Salesforce record owner'),
+			'args'		=> array(
+				'type'		=> 'textarea',
+				'desc'		=> __("The name of the Salesforce User in charge of the records created by this donation form.", 'cww'),
+				'default'	=> 'The credit card associated with a recurring donation will expire at the end of this month.'
+			)
+		);
+		
 		$meta_boxes['cww_df_settings']['cww_df_sf_campaign'] = array(
 			'handle'	=> 'cww_df_sf_campaign',
 			'title'		=> __('Salesforce campaign'),

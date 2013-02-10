@@ -47,6 +47,8 @@ class CwwDonateFormProcessor extends FormProcessor {
 			$this->meta_data['org_mail']		= get_bloginfo('admin_email');
 		}
 		
+		$this->meta_data['post_id'] = $this->post_id;
+		
 		// Alias meta fields to make them more manageable for use
 		$meta_fields = array(
 			'monthly_duration'			=> 'cww_df_monthly_duration',
@@ -189,11 +191,9 @@ class CwwDonateFormProcessor extends FormProcessor {
 			throw new Exception('sanitize_data() expects an array of data to sanitize.');
 			
 		$result = array();
-		error_log(print_r($data, true));
 		foreach( $data as $key => $val ) {
 			// Get rid of slashes added by wordpress
 			$val = stripslashes($val);
-			error_log($val);
 			$flag = preg_match('/email/i', $key) ? FILTER_SANITIZE_EMAIL : FILTER_SANITIZE_STRING;
 			$result[$key] = filter_var(trim($val), $flag);
 		}
@@ -241,7 +241,8 @@ class CwwDonateFormProcessor extends FormProcessor {
 		if ( in_array( 'df_phone', $this->required_fields ) ) {
 			if( $this->validate_phone_number( $this->data['donor']['phone'], 'df_phone' ) ) {
 				// Phone number passes muster, replace the non-numerical one in the donor array.
-				$this->data['donor']['phone'] = preg_replace('[^0-9]', '', $this->data['donor']['phone']);
+				$phone = preg_replace('[^0-9]', '', $this->data['donor']['phone']);
+				$this->data['donor']['phone'] = substr($phone, 0, 3) . '-' . substr($phone, 3,3) . '-' . substr($phone, 6,4);
 			} else {
 				return false;
 			}
@@ -316,6 +317,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 	/************************************************************************************/
 	public function submit_onetime_donation() {
 		$transaction = new AuthorizeNetAIM($this->data['authnet']['login'], $this->data['authnet']['key']);
+		$transaction->setSandbox(true);
 		$transaction->setFields(
 	        array(
 	        'amount' => $this->data['donation']['amount'], 
@@ -344,6 +346,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 	/************************************************************************************/
 	public function submit_recurring_donation() {
 		$request = new AuthorizeNetARB($this->data['authnet']['login'], $this->data['authnet']['key']);
+		$request->setSandbox(true);
 		
 		// Auth.net expects all recurring donations to be expressed in terms of months,
 		// Therefore annual contributions have an 'intervalLength' of 12 months.
@@ -529,6 +532,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 		$this->data['card']['num']  			= $this->clean['df_card_num']; 
 		$this->data['card']['exp']  			= $this->clean['df_exp_date'];
 		$this->data['card']['code'] 			= $this->clean['df_card_code'];
+		$this->data['card']['type']				= $this->card_type($this->data['card']['num']);
 
 		// - Transaction data
 		$this->data['donation']['start_date']	= $this->clean['df_startdate'];
