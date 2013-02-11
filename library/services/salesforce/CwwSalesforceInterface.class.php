@@ -20,6 +20,15 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 		
 		$contact['org']['ignore'] = true;
 		
+		// Set the owner id if Owner is provided
+		if ( !empty( $contact['Owner'] ) ) {
+			$contact['OwnerId'] = array(
+				'callback' => array('get_user_id'),
+				'args' => $contact['Owner']
+			);
+		}
+		unset($contact['Owner']);
+		
 		// Set the external id if it is not already set.
 		if ( empty( $contact[$ext_id_field] ) ) {
 			$contact[$ext_id_field] = array(
@@ -45,6 +54,15 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 	{
 		$org['meta']['type'] = 'Account';
 		// TO-DO: $this->validate_org( $org );
+		
+		// Set the owner id if Owner is provided
+		if ( !empty( $org['Owner'] ) ) {
+			$org['OwnerId'] = array(
+				'callback' => array('get_user_id'),
+				'args' => $org['Owner']
+			);
+		}
+		unset($org['Owner']);
 		
 		return $this->prep_sf_obj($org, true);
 	}
@@ -96,12 +114,20 @@ class CwwSalesforceInterface extends SalesforceSOAPAPIInterface
 	{
 		// TO-DO: $this->validate_donation( $donation, $contact );
 	
-		// Donation name, category and allocation are the same for donation and recurring donation
+		// Donation name, owner, category and allocation are the same for donation and recurring donation
 		$donation['Name'] = array(
 			'callback'	=> array('generate_donation_name'),
 			'args'		=> array($contact),
 			'required'	=> true
 		);
+		// Set the owner id if Owner is provided
+		if ( !empty( $donation['Owner'] ) ) {
+			$donation['OwnerId'] = array(
+				'callback' => array('get_user_id'),
+				'args' => $donation['Owner']
+			);
+		}
+		unset($donation['Owner']);
 		$donation['Donation_Category'] = array(
 			'custom'	=> true,
 			'value'		=> $donation['Donation_Category']

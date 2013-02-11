@@ -5,8 +5,13 @@ if(!empty($_GET['df'])) {
 	// Check for expired transient.
 	if ($df_passed_data) {
 		$df_passed_data = unserialize($df_passed_data);
-		$post = get_post($df_passed_data['conf_post_id']);
-		$df_content = $df_passed_data['conf_content'];
+		if ( $df_passed_data['conf_post_id'] == $post->ID ) {
+			$df_content = '<div class="notice success">Your donation has been successfully processed.  Thank you.';
+			$df_content .= '<br /><a href="' . get_permalink( $post->ID ) . '">Return to form.</a></div>';
+		} else {
+			$post = get_post($df_passed_data['conf_post_id']);
+			$df_content = $df_passed_data['conf_content'];
+		}
 	} else if( !empty( $_GET['amount'] ) || !empty( $_GET['type'] ) ) {
 		// Allow values for type and amount to be passed via query string
 		require_once('library/utilities/FormProcessor.class.php');

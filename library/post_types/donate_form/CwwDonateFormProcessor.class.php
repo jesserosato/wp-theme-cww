@@ -53,15 +53,6 @@ class CwwDonateFormProcessor extends FormProcessor {
 		$meta_fields = array(
 			'monthly_duration'			=> 'cww_df_monthly_duration',
 			'annual_duration'			=> 'cww_df_annual_duration',
-			'mc_list_id'				=> 'cww_df_mc_list_id',
-			'sf_update'					=> 'cww_df_sf_update',
-			'sf_campaign'				=> 'cww_df_sf_campaign',
-			'sf_category'				=> 'cww_df_sf_category',
-			'sf_task_user'				=> 'cww_df_sf_task_user',
-			'sf_donation_exp_task_desc'	=> 'cww_df_sf_donation_exp_task_desc',
-			'sf_card_exp_task_desc'		=> 'cww_df_sf_card_exp_task_desc',
-			'hr_update'					=> 'cww_df_hr_update',
-			'hr_deals_admin_id'			=> 'cww_df_hr_deals_admin_id',
 			'conf_post_id'				=> 'cww_df_conf_post_id',
 			'conf_mail_post_id'			=> 'cww_df_conf_mail_post_id',
 		);
@@ -99,8 +90,6 @@ class CwwDonateFormProcessor extends FormProcessor {
 			$this->settings = $settings;
 		else
 			$this->settings = get_option( 'cww_df_options' );
-		if ( !empty( $this->meta_data['hr_deals_admin_id'] ) )
-			$this->settings['cww_df_highrise_setting_deals_admin_user_id'] = $this->meta_data['hr_deals_admin_id'];
 	} // end set_settings()
 	
 	/************************************************************************************ 
@@ -446,7 +435,7 @@ class CwwDonateFormProcessor extends FormProcessor {
 		set_transient($trans_key, serialize($pass_data), 300);
 		// Redirect to confirmation page.
 		$url = get_permalink($this->post_id);
-		header('Location: ' . $url . '?df=' . $trans_key);
+		header('Location: ' . add_query_arg(array('df' => $trans_key), $url));
 	} // end redirect()
 	
 	/************************************************************************************ 

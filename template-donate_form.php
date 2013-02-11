@@ -11,7 +11,6 @@ require_once('library/post_types/donate_form/text/salutations.inc');
 require_once('library/post_types/donate_form/text/error.inc');
 global $df_errors;
 global $df_clean;
-
 $df_countries_options = '';
 // If the user hasn't picked a country, default to U.S., otherwise, use the user's choice.
 $df_selected_country = empty($df_clean['df_country']) ? __('United States') : $df_clean['df_country'];
@@ -116,10 +115,10 @@ foreach ( $df_salutations as $salutation ) {
   <div id="payment-wrap">
     <h3>Payment Information</h3>
     <div id="cc-logos">
-      <img title="Visa" src="/wp-content/themes/cww/images/V.gif" alt="Visa" width="43" height="26" />
-      <img title="MasterCard" src="/wp-content/themes/cww/images/MC.gif" alt="MasterCard" width="41" height="26" />
-      <img title="American Express" src="/wp-content/themes/cww/images/Amex.gif" alt="American Express" width="40" height="26" />
-      <img title="Discover" src="/wp-content/themes/cww/images/Disc.gif" alt="Discover" width="40" height="26" />
+      <img title="Visa" src="<?php echo bloginfo('url'); ?>/wp-content/themes/cww/images/V.gif" alt="Visa" width="43" height="26" />
+      <img title="MasterCard" src="<?php echo bloginfo('url'); ?>/wp-content/themes/cww/images/MC.gif" alt="MasterCard" width="41" height="26" />
+      <img title="American Express" src="<?php echo bloginfo('url'); ?>/wp-content/themes/cww/images/Amex.gif" alt="American Express" width="40" height="26" />
+      <img title="Discover" src="<?php echo bloginfo('url'); ?>/wp-content/themes/cww/images/Disc.gif" alt="Discover" width="40" height="26" />
     </div><!-- end #cc-logos !-->
     <div id="card-num-wrap" class="input-wrap text">
       <?php if (!empty($df_errors['df_card_num'])) : ?>

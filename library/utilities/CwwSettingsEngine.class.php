@@ -281,13 +281,14 @@ class CwwSettingsEngine {
 	    foreach ($options as $option) {
 	    	$key = $option['id'];
 	    	$val = trim($input[$key]);
-	    	if ( !empty( $option['req'] )) {
-	    		if ( empty($val) || $val == $option['std'] ) {
-	    			$error_msg = __("The field") . " '" . $option['title'] . "' " . __('is required', 'cww') . '.';
+	    	
+	    	// Check for empty/default fields values
+	    	if ( empty($val) || $val == $option['std'] ) {
+		    	if ( !empty( $option['req'] )) {
+			    	$error_msg = __("The field") . " '" . $option['title'] . "' " . __('is required', 'cww') . '.';
 			    	add_settings_error($key, $key . '_error', $error_msg, 'error');
-	            } else {
-		            $valid_input[$key] = $val;
-	            }
+		    	}
+		    	continue;
 	    	}
 	        switch ( $option['type'] ) {  
 	            default:  // text

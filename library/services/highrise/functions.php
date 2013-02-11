@@ -165,8 +165,20 @@ function cww_df_submit_data_to_highrise( $data, $meta_data, $settings )
 		return false;
 	if ( !cww_df_highrise_is_enabled() )
 		return false;
+	
+	$hr_meta_fields = array(
+		'hr_update'					=> 'cww_df_hr_update',
+		'hr_deals_admin_id'			=> 'cww_df_hr_deals_admin_id'
+	);
+	
+	foreach ( $hr_meta_fields as $key => $field )
+		$meta_data[$key] = get_post_meta($meta_data['post_id'], $field, true);
+	
 	if ( empty( $meta_data['hr_update'] ) )
 		return false;
+	
+	if ( !empty( $this->meta_data['hr_deals_admin_id'] ) )
+			$this->settings['cww_df_highrise_setting_deals_admin_user_id'] = $this->meta_data['hr_deals_admin_id'];
 	
 	// Process Highrise transaction data.		
 	$type = $data['donation']['type_code'];

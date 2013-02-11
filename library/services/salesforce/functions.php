@@ -18,7 +18,22 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 		return false;
 	if ( empty( $settings ) || !is_array( $settings ) )
 		return false;	
-		
+	
+	$sf_meta_fields = array(
+		'sf_update'					=> 'cww_df_sf_update',
+		'sf_campaign'				=> 'cww_df_sf_campaign',
+		'sf_category'				=> 'cww_df_sf_category',
+		'sf_record_owner'			=> 'cww_df_sf_record_owner',
+		'sf_task_user'				=> 'cww_df_sf_task_user',
+		'sf_donation_exp_task_desc'	=> 'cww_df_sf_donation_exp_task_desc',
+		'sf_card_exp_task_desc'		=> 'cww_df_sf_card_exp_task_desc'
+	);
+	
+	foreach ( $sf_meta_fields as $key => $field )
+			$meta_data[$key] = get_post_meta($meta_data['post_id'], $field, true);
+	
+	error_log(print_r($meta_data, true));
+	
 	if ( !cww_df_salesforce_is_enabled() || empty( $meta_data['sf_update'] ) )
 		return false;
 	
@@ -63,8 +78,7 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 	// If the donation is from an individual, but a company is provided, set the company
 	// type to none.
 	if ( !( $contact['org']['meta']['is_donor'] == 'Individual' ) && !empty( $contact['org']['Name'] ) )
-		$contact['org']['Type'] = 'Unknown';
-		 
+		$contact['org']['Type'] = 'Unknown';	 
 	
 	$payment = array('Payment_Method' => 'Credit Card');
 	
@@ -88,6 +102,7 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 			'Installments'						=> $data['donation']['installments'],
 			'Open_Ended_Status'					=> 'None',
 		);
+		
 		$donation_exp_task_due_date = recurrence_end_date($donation['Date_Established'], $donation['Installment_Period'], $donation['Installments']);
 		$donation_exp_task_due_date = date('Y-m-d', strtotime('-1 month', strtotime($donation_exp_task_due_date)));
 		$donation_exp_task = array(
@@ -123,33 +138,56 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 		$payment['Check_Reference_Number']		= $data['donation']['transaction_id'];
 	}
 	
+	// Set the owner if provided
+	if ( !empty( $meta_data['sf_record_owner'] ) ) {
+		$contact['Owner'] = $meta_data['sf_record_owner'];
+		$contact['org']['Owner'] = $meta_data['sf_record_owner'];
+		// Payment?
+		$donation['Owner'] = $meta_data['sf_record_owner'];
+	}
+
 	// Initialize Salesforce interface (ESSENTIAL)
-	if ( !( $sf_interface = new CwwSalesforceInterface($sf_info) ) )
-		return false;
-	
+	$sf_interface = new CwwSalesforceInterface($sf_info);
+
 	// Save the contact (ESSENTIAL)
-	if ( !( $contact_id	= $sf_interface->upsert_contact($contact, "Name_and_Email_Ext_Id__c" ) ) )
-		return false;
-		
+	$sf_errors = $sf_interface->get_errors();
+	if ( $sf_interface && empty( $sf_errors ) )
+		$contact_id	= $sf_interface->upsert_contact($contact, "Name_and_Email_Ext_Id__c" );
+	else
+		$contact_id = false;
 	
-	
-	// Add Organization and affiliation between Organizatin and Contact if necessary
-	if ( !empty( $contact['org']['Name'] ) && ( $org_id = $sf_interface->get_org_id( $contact['org'], true ) ) )
+	// Add Organization and affiliation between Organizatin and Contact if necessar
+	if ( $contact_id && !empty( $contact['org']['Name'] ) && ( $org_id = $sf_interface->get_org_id( $contact['org'], true ) ) )
 		$sf_interface->create_affiliation(array('Contact' => $contact_id, 'Organization' => $org_id));
 	
 	// Save the donation (ESSENTIAL)
-	if ( !( $donation['Id'] = $sf_interface->create_donation( $donation, $contact ) ) )
-		return false;
+	if ( $contact_id )
+		$donation['Id'] = $sf_interface->create_donation( $donation, $contact );
 		
 	// Add tasks and custom fields to single donations associated with recurring donation
 	// if necessary.
-	if ( $data['donation']['recurring'] ) {
-		$sf_interface->create_donation_task( $donation_exp_task, $donation['Id'] );
-		if ( !empty( $card_exp_task ) )
-			$sf_interface->create_donation_task( $card_exp_task, $donation['Id'] );
-		$sf_interface->update_recurring_donation_donations($donation, $payment);
+	if ( !empty( $donation['Id'] ) ) {
+		if ( $data['donation']['recurring'] ) {
+			$sf_interface->create_donation_task( $donation_exp_task, $donation['Id'] );
+			if ( !empty( $card_exp_task ) )
+				$sf_interface->create_donation_task( $card_exp_task, $donation['Id'] );
+			$sf_interface->update_recurring_donation_donations($donation, $payment);
+		} else {
+			$sf_interface->update_donation_payment($payment, $donation['Id']);
+		}
+	}
+	
+	$sf_errors = $sf_interface->get_errors();
+	$sf_responses = $sf_interface->get_responses();
+	if ( empty( $sf_errors ) ) {
+		return true;
 	} else {
-		$sf_interface->update_donation_payment($payment, $donation['Id']);
+		foreach( $sf_errors as $error ) {
+			error_log(print_r($error['backtrace'], true));
+			error_log($error['error']->getMessage());
+		}
+		// error_log(print_r($sf_interface->get_responses(), true));
+		return false;
 	}
 }
 
@@ -244,76 +282,78 @@ add_filter('cww_df_meta_boxes', 'cww_df_add_salesforce_meta_boxes', 1);
  */
 function cww_df_add_salesforce_meta_boxes( $meta_boxes ) 
 {
-	if ( cww_df_salesforce_is_enabled() ) {
-		$meta_boxes['cww_df_settings']['cww_df_sf_update'] = array(
-			'handle'	=> 'cww_df_sf_update',
-			'title'		=> __('Add donation to Salesforce'),
-			'args'		=> array(
-				'type'		=> 'checkbox',
-				'desc'		=> __("Choose whether or not to update the Salesforce database with the user and donation data upon completion of this form.", 'cww'),
-				'default'	=> '1',
-			)
-		);
+	if ( !cww_df_salesforce_is_enabled() )
+		return $meta_boxes;
 		
-		$meta_boxes['cww_df_settings']['cww_df_sf_owner'] = array(
-			'handle'	=> 'cww_df_sf_owner',
-			'title'		=> __('Salesforce record owner'),
-			'args'		=> array(
-				'type'		=> 'textarea',
-				'desc'		=> __("The name of the Salesforce User in charge of the records created by this donation form.", 'cww'),
-				'default'	=> 'The credit card associated with a recurring donation will expire at the end of this month.'
-			)
-		);
-		
-		$meta_boxes['cww_df_settings']['cww_df_sf_campaign'] = array(
-			'handle'	=> 'cww_df_sf_campaign',
-			'title'		=> __('Salesforce campaign'),
-			'args'		=> array(
-				'type'		=> 'text',
-				'desc'		=> __("The name of Salesforce campaign with which to associate donations made using this form (copy and paste from Salesforce).", 'cww'),
-				'default'	=> '',
-			)
-		);
-		
-		$meta_boxes['cww_df_settings']['cww_df_sf_category'] = array(
-			'handle'	=> 'cww_df_sf_category',
-			'title'		=> __('Salesforce donation category'),
-			'args'		=> array(
-				'type'		=> 'text',
-				'desc'		=> __("The value of the 'Donation Category' picklist to give to donation made using this form (copy and paste from Salesforce).", 'cww'),
-				'default'	=> ''
-			)
-		);
-		
-		$meta_boxes['cww_df_settings']['cww_df_sf_task_user'] = array(
-			'handle'	=> 'cww_df_sf_task_user',
-			'title'		=> __('Salesforce task assignee'),
-			'args'		=> array(
-				'type'		=> 'text',
-				'desc'		=> __("The full name of the user (e.g. Jane Doe) to whom tasks regarding recurring donations should be assigned (copy and paste from Salesforce). This defaults to the Salesforce account used to create new donations (set in 'Settings >> Donate forms').", 'cww'),
-				'default'	=> ''
-			)
-		);
-		
-		$meta_boxes['cww_df_settings']['cww_df_sf_donation_exp_task_desc'] = array(
-			'handle'	=> 'cww_df_sf_donation_exp_task_desc',
-			'title'		=> __('Salesforce recurring donation expiration task description'),
-			'args'		=> array(
-				'type'		=> 'textarea',
-				'desc'		=> __("The description of the task that will be created in Salesforce to remind the Salesforce task assignee that a recurring donation expires in one month.", 'cww'),
-				'default'	=> 'A recurring donation expires in one month.'
-			)
-		);
-		
-		$meta_boxes['cww_df_settings']['cww_df_sf_card_exp_task_desc'] = array(
-			'handle'	=> 'cww_df_sf_card_exp_task_desc',
-			'title'		=> __('Salesforce recurring donation credit card expiration task description'),
-			'args'		=> array(
-				'type'		=> 'textarea',
-				'desc'		=> __("The description of the task that will be created in Salesforce to remind the Salesforce task assignee that the credit card associated with a recurring donation expires at the end of the month.", 'cww'),
-				'default'	=> 'The credit card associated with a recurring donation will expire at the end of this month.'
-			)
-		);
-	}
+	$meta_boxes['cww_df_settings']['cww_df_sf_update'] = array(
+		'handle'	=> 'cww_df_sf_update',
+		'title'		=> __('Add donation to Salesforce'),
+		'args'		=> array(
+			'type'		=> 'checkbox',
+			'desc'		=> __("Choose whether or not to update the Salesforce database with the user and donation data upon completion of this form.", 'cww'),
+			'default'	=> '1',
+		)
+	);
+	
+	$meta_boxes['cww_df_settings']['cww_df_sf_record_owner'] = array(
+		'handle'	=> 'cww_df_sf_record_owner',
+		'title'		=> __('Salesforce record owner'),
+		'args'		=> array(
+			'type'		=> 'text',
+			'desc'		=> __("The full name of the user (e.g. Jane Doe) to use as the owner of the contact, donation and affiliated records in Salesforce (copy and paste the name from Salesforce). This defaults to the Salesforce account used to create new donations (set in 'Settings >> Donate forms').", 'cww'),
+			'default'	=> ''
+		)
+	);
+	
+	$meta_boxes['cww_df_settings']['cww_df_sf_campaign'] = array(
+		'handle'	=> 'cww_df_sf_campaign',
+		'title'		=> __('Salesforce campaign'),
+		'args'		=> array(
+			'type'		=> 'text',
+			'desc'		=> __("The name of Salesforce campaign with which to associate donations made using this form (copy and paste from Salesforce).", 'cww'),
+			'default'	=> '',
+		)
+	);
+	
+	$meta_boxes['cww_df_settings']['cww_df_sf_category'] = array(
+		'handle'	=> 'cww_df_sf_category',
+		'title'		=> __('Salesforce donation category'),
+		'args'		=> array(
+			'type'		=> 'text',
+			'desc'		=> __("The value of the 'Donation Category' picklist to give to donation made using this form (copy and paste from Salesforce).", 'cww'),
+			'default'	=> ''
+		)
+	);
+	
+	$meta_boxes['cww_df_settings']['cww_df_sf_task_user'] = array(
+		'handle'	=> 'cww_df_sf_task_user',
+		'title'		=> __('Salesforce task assignee'),
+		'args'		=> array(
+			'type'		=> 'text',
+			'desc'		=> __("The full name of the user (e.g. Jane Doe) to whom tasks regarding recurring donations should be assigned (copy and paste from Salesforce). This defaults to the Salesforce account used to create new donations (set in 'Settings >> Donate forms').", 'cww'),
+			'default'	=> ''
+		)
+	);
+	
+	$meta_boxes['cww_df_settings']['cww_df_sf_donation_exp_task_desc'] = array(
+		'handle'	=> 'cww_df_sf_donation_exp_task_desc',
+		'title'		=> __('Salesforce recurring donation expiration task description'),
+		'args'		=> array(
+			'type'		=> 'textarea',
+			'desc'		=> __("The description of the task that will be created in Salesforce to remind the Salesforce task assignee that a recurring donation expires in one month.", 'cww'),
+			'default'	=> 'A recurring donation expires in one month.'
+		)
+	);
+	
+	$meta_boxes['cww_df_settings']['cww_df_sf_card_exp_task_desc'] = array(
+		'handle'	=> 'cww_df_sf_card_exp_task_desc',
+		'title'		=> __('Salesforce recurring donation credit card expiration task description'),
+		'args'		=> array(
+			'type'		=> 'textarea',
+			'desc'		=> __("The description of the task that will be created in Salesforce to remind the Salesforce task assignee that the credit card associated with a recurring donation expires at the end of the month.", 'cww'),
+			'default'	=> 'The credit card associated with a recurring donation will expire at the end of this month.'
+		)
+	);
+
 	return $meta_boxes;
 }

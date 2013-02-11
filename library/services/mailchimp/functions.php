@@ -77,6 +77,9 @@ function cww_df_submit_data_to_mailchimp( $data, $meta_data, $settings )
 		return false;
 	if ( !cww_df_mailchimp_is_enabled() )
 		return false;
+		
+	$meta_data['mc_list_id'] = get_post_meta($meta_data['post_id'], 'cww_df_mc_list_id', true);
+	
 	if ( empty( $meta_data['mc_list_id'] ) || empty( $data['donor']['subscribe'] ) )
 		return false;
 	if ( empty( $data['donor']['email'] ) )
