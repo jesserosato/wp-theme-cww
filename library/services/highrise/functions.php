@@ -177,8 +177,8 @@ function cww_df_submit_data_to_highrise( $data, $meta_data, $settings )
 	if ( empty( $meta_data['hr_update'] ) )
 		return false;
 	
-	if ( !empty( $this->meta_data['hr_deals_admin_id'] ) )
-			$this->settings['cww_df_highrise_setting_deals_admin_user_id'] = $this->meta_data['hr_deals_admin_id'];
+	if ( !empty( $meta_data['hr_deals_admin_id'] ) )
+			$settings['cww_df_highrise_setting_deals_admin_user_id'] = $meta_data['hr_deals_admin_id'];
 	
 	// Process Highrise transaction data.		
 	$type = $data['donation']['type_code'];
@@ -268,9 +268,7 @@ function cww_df_submit_data_to_highrise( $data, $meta_data, $settings )
 		$person = $hr->syncContact($data['donor']);
 		$hr->addTransaction($hr_transaction, $person);
 	} catch(Exception $e) {
-		if( WP_DEBUG === true ) {
-			error_log(__FILE__ . ": " . $e->getMessage());
-		}
+		error_log(__FILE__ . ": " . $e->getMessage());
 		return false;
 	}
 	return true;
