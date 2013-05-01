@@ -1,7 +1,9 @@
 <?php
 // Check for successfuly submitted form or query string
+global $df_clean;
+global $df_errors;
+global $df_content;
 require_once('library/post_types/donate_form/query_process.php');
-
 if (empty($df_content))
 	require_once('library/post_types/donate_form/process.php');	
 

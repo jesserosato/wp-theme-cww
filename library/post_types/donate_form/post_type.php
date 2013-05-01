@@ -1,5 +1,7 @@
 <?php
-require_once( dirname(dirname(dirname(__FILE__))) . '/utilities/CwwPostTypeEngine.class.php');
+// Customize the following with the theme or plugin parent.
+define('DF_PARENT_ROOT', get_theme_root().'/cww');
+require_once( DF_PARENT_ROOT . '/library/utilities/CwwPostTypeEngine.class.php');
 require_once('meta_boxes.php');
 require_once('df_options.php');
 

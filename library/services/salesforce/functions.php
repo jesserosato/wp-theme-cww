@@ -183,7 +183,7 @@ function cww_df_submit_data_to_salesforce( $data, $meta_data, $settings ) {
 		return true;
 	} else {
 		foreach( $sf_errors as $error ) {
-			error_log(print_r($error['backtrace'], true));
+			error_log(var_export($error['backtrace'], true));
 			error_log($error['error']->getMessage());
 		}
 		// error_log(print_r($sf_interface->get_responses(), true));
