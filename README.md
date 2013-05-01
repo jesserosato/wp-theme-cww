@@ -1,5 +1,8 @@
 Courage Worldwide Theme (Child of 'Striking' theme)
 ---------------------------------------------------
+
+MOST RECENT COMMIT IS UNSTABLE.
+
 This theme includes several post types:
 - Donate form
 	- Supports:
